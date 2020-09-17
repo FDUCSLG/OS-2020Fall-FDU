@@ -1,28 +1,205 @@
-## 项目介绍
+## Sprint1 Lab 1 工具链（开发环境搭建）
 
-这是复旦大学 2020 年秋季学期《操作系统》课程的配套实验内容。我们将建立一个基于 ARM 架构的简易教学操作系统，实验（预期）会有如下三次迭代。
+[toc]
 
-### 第一次迭代
+### 1.1 实验内容简介
 
-在本轮迭代中，我们将实现一个非常简陋的操作系统内核，它仅有一个很小的目标：能够运行一个用户程序且打印字符串。尽管实现上述目标没有内核的支持也可完成，但为了辅助理解操作系统的概念与知识，我们还是希望本轮迭代后的内核能具备现代操作系统内核的基本结构，实验内容将涉及：
+#### 1.1.1 实验目标
 
-- 工具链与 ARM 架构简介
-- 启动（Booting）
-- 异常（中断）处理
-- 内存管理
-- 进程与调度
-- 时钟中断与系统调用
+​		本次实验主要是为后续实验搭建开发环境、熟悉相应工具。
 
-### 第二次迭代
+#### 1.1.2 开发环境
 
-本轮迭代中，我们将在第一轮迭代的基础上进一步完善内核，以更加符合现代操作系统。本轮迭代将涉及：
+​		开发教学操作系统内核所需的环境如下：
 
-- 完善内存管理
-- 块存储设备管理与驱动
-- 文件系统
-- 简易 shell
+- 类 Unix 操作系统（Ubuntu，Arch Linux 等）
+- GCC
+- GNU Make
+- 版本管理 Git
+- 模拟器 QEMU
+- 调试工具 GDB
 
-### 第三次迭代
+### 1.2 交叉编译工具链
 
+​		编译是指将代码经过一系列步骤转换为可执行文件的过程。每个步骤都有对应的工具将前一步骤的输出作为输入进行相应处理，我们称这些工具为编译工具链，包括编译器（Compiler），汇编器（Assembler）和连接器（Linker）
 
+<img src="Pic/Compile-procedure.png">															Fig.1[^程序员的自我修养]
 
+​		交叉编译[^Cross-Compile] 是指在一种平台上编译出能在体系结构不同的另一种平台上运行的程序，交叉编译工具链即是该流程中所使用的工具。对应到我们的实验则是指，我们在 X86 架构的 PC 平台中编译出能在 ARM 架构 CPU 上运行的操作系统内核。
+
+​		我们推荐以 Ubuntu，Arch Linux 、WSL 等平台作为开发环境，（以下教程基于 Ubuntu 18.04-LTS 环境配置）。可通过如下指令下载他人已经制作好的交叉编译工具链
+
+```shell
+sudo apt install gcc-aarch64-linux-gnu
+```
+
+​		完成上述操作后，可通过如下指令测试安装成功
+
+```shell
+aarch64-linux-gnu-gcc -v
+```
+
+​		显示内容如下，其中 Target 指示目标平台（ARMv8 架构下的 Linux 平台）。
+
+```shell
+COLLECT_GCC=aarch64-linux-gnu-gcc
+COLLECT_LTO_WRAPPER=/usr/lib/gcc-cross/aarch64-linux-gnu/7/lto-wrapper
+Target: aarch64-linux-gnu
+Configured with: ...
+Thread model: posix
+gcc version 7.5.0 (Ubuntu/Linaro 7.5.0-3ubuntu1~18.04) 
+```
+
+​		对自己搭建完整工具链感兴趣的同学，可参考上文链接自行学习制作符合自己使用习惯的工具链。
+
+### 1.3 QEMU 模拟器
+
+​		我们的项目（预期）会在树莓派-3B 上运行，但在上板之前先通过模拟器模拟真实硬件环境来辅助调试内核会有效减少上板运行时出现错误的情况。QEMU 是一个广泛使用的开源计算机模拟器和虚拟机[^QEMU]，可以在一种架构（如 X86 PC）下运行另一种架构（如 ARM）下的操作系统和程序。可直接通过如下指令安装 QEMU
+
+```shell
+sudo apt install qemu qemu-system-arm qemu-efi-aarch64 qemu-utils
+```
+
+​		安装完成后可通过如下指令确认当前 QEMU 版本是否支持 `raspi3` 的 soc
+
+```shell
+qemu-system-aarch64 -M help
+```
+
+### 1.4 GDB
+
+​		系统自带的 gdb 并不支持跨平台的 debug，因此需要安装支持多体系结构的版本
+
+```shell
+sudo apt install -y build-essential gdb gdb-multiarch
+```
+
+### 1.5 Git
+
+​		如果是对 git 很熟悉的同学可以跳过小节内容。
+
+​		后续的整个项目的开发、维护建议通过 Git 来实现版本管理，首先需要安装 Git 工具。
+
+```shell
+sudo apt install git
+```
+
+​		为了完成后续的 Lab，你需要将本项目克隆下来
+
+```shell
+git clone https://github.com/FDUCSLG/OS-Autumn20-Fudan.git
+```
+
+​		进入到项目文件夹下后，切换至分支 `sprint1-lab1`，即可在本地看到当前文档。
+
+​		对通过 Git 进行版本管理感兴趣的同学可以参考 Git User Manual[^Git-manual] 进一步学习。
+
+### 1.6 GNU Make
+
+​		Make 会根据项目文件给定的依赖关系自动找出相应的文件进行编译[^Make 的意义]，因此每个项目都需要一个 “Makefile” 文件来指明依赖关系。Makefile 的规则如下
+
+```makefile
+target ...: prerequisites ...
+	recipe
+ 	...
+ 	...
+```
+
+- target
+
+  可以是一个 object file（目标文件），也可以是一个可执行文件，还可以是一个标签（label），例如 *clean*。
+
+- prerequisites
+
+  生成该 target 所依赖的文件和/或 target
+
+- recipe
+
+  该 target 要执行的命令（任意的 shell 命令）
+  
+  ​	对 Make 感兴趣的同学，可自行参考 tutorial [^Makefile-tutorial]进行学习。
+
+### 1.6 裸机（Bare Metal）程序
+
+​		裸机程序是指直接运行在硬件层面、不借助操作系统的程序。
+
+### 1.7 pwndbg(optional)
+
+​		仅仅是 gdb 的话，调试起来可能会不太美观（方便），建议安装 pwndbg
+
+```shell
+git clone https://github.com/pwndbg/pwndbg
+cd pwndbg
+./setup.sh
+```
+
+​		安装 pwndbg 后，普通的 gdb 可以配合 pwndbg 正常食用，但交叉编译的 `aarch64-linux-gdb` 会报各种错误，知乎专栏 *pwndbg 的坑*[^Zhihu] 给了我很多的帮助，需要注意 pwndbg 使用的 pip 版本信息。
+
+​		4.2.0 版本的 QEMU 无法搭配 pwndbg 使用，因此可以通过下述指令获取 QEMU 5.1.0 的源码并手动编译。建议将 `aarch64-softmmu` 下的 `qemu-system-aarch64` 复制到环境变量如 `usr/bin` 下。
+
+```shell
+wget https://download.qemu.org/qemu-5.1.0.tar.xz
+tar xvJf qemu-5.1.0.tar.xz
+cd qemu-5.1.0
+sudo apt-get build-dep qemu # 安装 QEMU 开发库
+
+mkdir -p configs
+cd configs/
+./../configure --target-list=aarch64-softmmu --enable-debug
+make ARCH=aarch64 CROSS_COMPILE=aarch64-linux-gnu- -j6
+```
+
+​		如果在完成将 QEMU 版本升级到 5.1.0 后仍然无法搭配 pwndbg 使用，则需要通过下述指令将 gdb 更新至最新版本。
+
+```shell
+wget http://ftp.gnu.org/gnu/gdb/gdb-9.2.tar.gz
+tar -xvf gdb-9.2.tar.gz
+cd gdb-9.2
+mkdir build
+cd build/
+./../configure --target=aarch64-linux --prefix=/home/sunflower/Downloads/aarch64-linux-gdb
+make -j6
+make install
+```
+
+### 1.8 Exercise
+
+#### 1.8.1 Git Exercise
+
+​		请确保你当前处于 `OS-2020Fall-Fudan` 文件夹的 `sprint1-lab1` 下，按顺序完成如下操作
+
+- 通过 `git checkout -b dev` 创建、切换到 `dev` 分支
+- 通过 `git branch -v` 可以查看所有本地分支，显示相应分支的信息，并指示当前所在分支
+- 创建一个 `README.md` 文件，并写入你的名字和学号
+- 通过 `git status` 可以查看当前分支下未保存的修改
+- 通过 `git add` 和 `git commit` 来保存你的修改
+- 通过 `git checkout sprint1-lab1` 切换到 `sprint1-lab1` 分支，通过 `git rebase dev` 将 `dev` 分支上的修改作用到 `sprint1-lab1` 分支，如果出现了 conflicts 则根据指示进行合并
+- 通过 `git log` 可以查看当前分支下的 log
+
+请确认你清楚明白以下 `git` 指令的含义：
+
+- git brahch
+- git checkout
+- git add
+- git commit
+- git merge
+- git rebase
+- git push
+- git pull
+- git clone
+- git log
+- git status
+
+#### 1.8.2 Makefile Exercise
+
+​		请画出 `simple/Makefile` 中指令的依赖关系图。
+
+### 1.9 参考文献
+
+[^程序员的自我修养]:https://book.douban.com/subject/3652388/
+[^Cross-Compile]:https://blog.csdn.net/hailin0716/article/details/17578767
+[^QEMU]:https://wiki.archlinux.org/index.php/QEMU_(%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87)
+[^Git-manual]:https://mirrors.edge.kernel.org/pub/software/scm/git/docs/user-manual.html
+[^Make 的意义]:https://blog.csdn.net/YEYUANGEN/article/details/36898505
+[^Makefile-tutorial]:https://seisman.github.io/how-to-write-makefile/
+[^Zhihu]:https://zhuanlan.zhihu.com/p/129837931
