@@ -119,10 +119,6 @@ target ...: prerequisites ...
   
   ​	对 Make 感兴趣的同学，可自行参考 tutorial [^Makefile-tutorial]进行学习。
 
-### 1.6 裸机（Bare Metal）程序
-
-​		裸机程序是指直接运行在硬件层面、不借助操作系统的程序。
-
 ### 1.7 pwndbg(optional)
 
 ​		仅仅是 gdb 的话，调试起来可能会不太美观（方便），建议安装 pwndbg
@@ -192,7 +188,7 @@ make install
 
 #### 1.8.2 Makefile Exercise
 
-​		请画出 `simple/Makefile` 中指令的依赖关系图。
+​		请画出 `simple/Makefile` 中 make 命令的依赖关系。
 
 ### 1.9 参考文献
 
