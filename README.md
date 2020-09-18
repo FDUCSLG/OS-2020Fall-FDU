@@ -129,9 +129,9 @@ cd pwndbg
 ./setup.sh
 ```
 
-​		安装 pwndbg 后，普通的 gdb 可以配合 pwndbg 正常食用，但交叉编译的 `aarch64-linux-gdb` 会报各种错误，知乎专栏 *pwndbg 的坑*[^Zhihu] 给了我很多的帮助，需要注意 pwndbg 使用的 pip 版本信息。
+​		安装 pwndbg 后，普通的 gdb 可以配合 pwndbg 正常食用，但交叉编译的 `aarch64-linux-gdb` 会报各种错误，知乎专栏 *pwndbg 的坑*[^Zhihu] 给了我很多的帮助，此处需要注意 pwndbg 使用的 pip 版本信息。
 
-​		4.2.0 版本的 QEMU 无法搭配 pwndbg 使用，因此可以通过下述指令获取 QEMU 5.1.0 的源码并手动编译。建议将 `aarch64-softmmu` 下的 `qemu-system-aarch64` 复制到环境变量如 `usr/bin` 下。
+​		4.2.0 版本的 QEMU 无法搭配 pwndbg 使用，因此可以通过下述指令获取 QEMU 5.1.0 的源码并手动编译。建议将 `configs/aarch64-softmmu` 下的 `qemu-system-aarch64` 复制到环境变量如 `usr/bin` 下，即可在 shell 下直接访问（`qemu-system-aarch64 -version` 显示版本应为 5.1.0）。
 
 ```shell
 wget https://download.qemu.org/qemu-5.1.0.tar.xz
@@ -141,7 +141,7 @@ sudo apt-get build-dep qemu # 安装 QEMU 开发库
 
 mkdir -p configs
 cd configs/
-./../configure --target-list=aarch64-softmmu --enable-debug
+./../configure --target-list=aarch64-softmmu --enable-debug # target-list 指定 configs 下 make 指令产生的 obj 放置位置
 make ARCH=aarch64 CROSS_COMPILE=aarch64-linux-gnu- -j6
 ```
 
@@ -153,7 +153,7 @@ tar -xvf gdb-9.2.tar.gz
 cd gdb-9.2
 mkdir build
 cd build/
-./../configure --target=aarch64-linux --prefix=/home/sunflower/Downloads/aarch64-linux-gdb
+./../configure --target=aarch64-linux --prefix=/home/sunflower/Downloads/aarch64-linux-gdb # target 指定架构信息，prefix 指定 make 指令产生的 obj 放置位置
 make -j6
 make install
 ```
