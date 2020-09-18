@@ -23,7 +23,9 @@
 
 ​		编译是指将代码经过一系列步骤转换为可执行文件的过程。每个步骤都有对应的工具将前一步骤的输出作为输入进行相应处理，我们称这些工具为编译工具链，包括编译器（Compiler），汇编器（Assembler）和连接器（Linker）
 
-<img src="Pic/Compile-procedure.png">															Fig.1[^程序员的自我修养]
+<img src="Pic/Compile-procedure.png">															Fig.1[^程序员的自我修养] 
+
+​													编译流程包括：预处理、编译、汇编、链接
 
 ​		交叉编译[^Cross-Compile] 是指在一种平台上编译出能在体系结构不同的另一种平台上运行的程序，交叉编译工具链即是该流程中所使用的工具。对应到我们的实验则是指，我们在 X86 架构的 PC 平台中编译出能在 ARM 架构 CPU 上运行的操作系统内核。
 
@@ -60,7 +62,7 @@ gcc version 7.5.0 (Ubuntu/Linaro 7.5.0-3ubuntu1~18.04)
 sudo apt install qemu qemu-system-arm qemu-efi-aarch64 qemu-utils
 ```
 
-​		安装完成后可通过如下指令确认当前 QEMU 版本是否支持 `raspi3` 的 soc
+​		安装完成后可通过如下指令确认当前 QEMU 版本是否支持 `raspi3` 的 soc，如果不支持的话，请参考 **1.7 pwndbg** 小节手动编译 qemu。 
 
 ```shell
 qemu-system-aarch64 -M help
