@@ -62,7 +62,7 @@ gcc version 7.5.0 (Ubuntu/Linaro 7.5.0-3ubuntu1~18.04)
 sudo apt install qemu qemu-system-arm qemu-efi-aarch64 qemu-utils
 ```
 
-​		安装完成后可通过如下指令确认当前 QEMU 版本是否支持 `raspi3` 的 soc，如果不支持的话，请参考 **1.7 pwndbg** 小节手动编译 qemu。 
+​		安装完成后可通过如下指令确认当前 QEMU 版本是否支持 `raspi3` 的 soc，如果不支持的话，请参考 **0.7 pwndbg** 小节手动编译 qemu。 
 
 ```shell
 qemu-system-aarch64 -M help
@@ -92,7 +92,7 @@ sudo apt install git
 git clone https://github.com/FDUCSLG/OS-Autumn20-Fudan.git
 ```
 
-​		进入到项目文件夹下后，切换至分支 `sprint1-lab1`，即可在本地看到当前文档。
+​		进入到项目文件夹下后，切换至分支 `lab0`，即可在本地看到当前文档。
 
 ​		对通过 Git 进行版本管理感兴趣的同学可以参考 Git User Manual[^Git-manual] 进一步学习。
 
@@ -164,14 +164,14 @@ make install
 
 #### 0.8.1 Git Exercise
 
-​		请确保你当前处于 `OS-2020Fall-Fudan` 文件夹的 `sprint1-lab1` 下，按顺序完成如下操作
+​		请确保你当前处于 `OS-2020Fall-Fudan` 文件夹的 `lab0` 下，按顺序完成如下操作
 
 - 通过 `git checkout -b dev` 创建、切换到 `dev` 分支
 - 通过 `git branch -v` 可以查看所有本地分支，显示相应分支的信息，并指示当前所在分支
 - 创建一个 `README.md` 文件，并写入你的名字和学号
 - 通过 `git status` 可以查看当前分支下未保存的修改
 - 通过 `git add` 和 `git commit` 来保存你的修改
-- 通过 `git checkout sprint1-lab1` 切换到 `sprint1-lab1` 分支，通过 `git rebase dev` 将 `dev` 分支上的修改作用到 `sprint1-lab1` 分支，如果出现了 conflicts 则根据指示进行合并
+- 通过 `git checkout lab0` 切换到 `lab0` 分支，通过 `git rebase dev` 将 `dev` 分支上的修改作用到 `lab0` 分支，如果出现了 conflicts 则根据指示进行合并
 - 通过 `git log` 可以查看当前分支下的 log
 
 请确认你清楚明白以下 `git` 指令的含义：
