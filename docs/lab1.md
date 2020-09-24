@@ -8,12 +8,8 @@ ARM 同 MIPS 一样是一种精简指令架构（RISC），它相较复杂指令
 
 关于 ARM 架构的一些简单介绍可以参考 Stanford[^Stanford] *Phase1: ARM and a Leg(Subphase A-C)*。*A Guide to ARM64 / AArch64 Assembly on Linux with Shellcodes and Cryptography*[^Assembly] 也提供关于 ARM 架构的丰富内容。
 
-### 1.1.1 参考资料
-
 [^Stanford]: https://cs140e.sergio.bz/assignments/3-spawn/
 [^Assembly]: https://modexp.wordpress.com/2018/10/30/arm64-assembly/
-
-
 
 ## 1.2 树莓派 3 与 BCM2837
 
@@ -53,7 +49,7 @@ ARM 同 MIPS 一样是一种精简指令架构（RISC），它相较复杂指令
 
 下面仅介绍我们所用到的语法，具体请参考 [Linker Scripts](https://sourceware.org/binutils/docs/ld/Scripts.html)。
 
-- `.` 被称为 location counter，代表了当前位置代码的实际上会运行在内存中的哪个地址。如 `. = 0xFFFF000000080000;` 说明我们的内核镜像的第一条指令，会运行在 0xFFFF000000080000。事实上我们一开始是运行在物理地址 0x80000，开启页表后，我们会跳到高地址（虚拟地址），大部分代码会在那里完成，。
+- `.` 被称为 location counter，代表了当前位置代码的实际上会运行在内存中的哪个地址。如 `. = 0xFFFF000000080000;` 代表我们告诉链接器内核的第一条指令运行在 0xFFFF000000080000。但事实上，我们一开始是运行在物理地址 0x80000（为什么仍能正常运行？），开启页表后，我们才会跳到高地址（虚拟地址），大部分代码会在那里完成。
 - text 段中的第一行为 `KEEP(*(.text.boot))` 是指把 kern/entry.S 中我们自定义的 `.text.boot` 段放在 text 段的开头。`KEEP` 则是告诉链接器始终保留此段。
 - `PROVIDE(etext = .)` 声明了一个符号 `etext`（但并不会为其分配具体的内存空间，即在 C 代码中我们不能对其进行赋值），并将其地址设为当前的 location counter。这使得我们可以在汇编或 C 代码中得到内核各段（text/data/bss）的地址范围，我们在初始化 BSS 的时候需要用到这些符号。
 
@@ -76,9 +72,9 @@ ARM 同 MIPS 一样是一种精简指令架构（RISC），它相较复杂指令
 
 ### 1.4.2 初始页表
 
-操作系统内核的代码通常位于高地址，而鉴于 Arm v8 的 MMU 机制，即可以根据地址的高 16 位来自动切换不同的页表，我们将内核放在虚拟地址 [0xFFFF'0000'0000'0000, 0xFFFF'FFFF'FFFF'FFFF]，剩余的虚拟地址 [0x0 ~ 0x0000'FFFF'FFFF'FFFF] 则留给用户代码。
+操作系统内核的代码通常位于高地址（为什么这么设计？），而鉴于 Arm v8 的 MMU 机制，即可以根据地址的高 16 位来自动切换不同的页表，我们将内核放在虚拟地址 [0xFFFF'0000'0000'0000, 0xFFFF'FFFF'FFFF'FFFF]，剩余的虚拟地址 [0x0 ~ 0x0000'FFFF'FFFF'FFFF] 则留给用户代码。
 
-为了便于实现，我们在 kern/kpgdir.c 中直接硬编码了一个页表，将两块1GB的内存 [0, 1GB) 和 [KERNBASE, KERNBASE+1GB)，其中 KERNBASE 为 0xFFFF'0000'0000'0000，均映射到物理地址的 [0, 1GB)，如下
+为了便于实现，我们在 kern/kpgdir.c 中直接硬编码了一个页表，将两块 1GB 的内存 [0, 1GB) 和 [KERNBASE, KERNBASE+1GB)，均映射到物理地址的 [0, 1GB)，其中 KERNBASE 为 0xFFFF'0000'0000'0000，如下
 
 | 虚拟地址                                       | 物理地址           |
 | ---------------------------------------------- | ------------------ |
