@@ -1,14 +1,14 @@
-## Sprint1 Lab 1 工具链（开发环境搭建）
+## Lab 0 工具链（开发环境搭建）
 
 [toc]
 
-### 1.1 实验内容简介
+### 0.1 实验内容简介
 
-#### 1.1.1 实验目标
+#### 0.1.1 实验目标
 
 ​		本次实验主要是为后续实验搭建开发环境、熟悉相应工具。
 
-#### 1.1.2 开发环境
+#### 0.1.2 开发环境
 
 ​		开发教学操作系统内核所需的环境如下：
 
@@ -19,7 +19,7 @@
 - 模拟器 QEMU
 - 调试工具 GDB
 
-### 1.2 交叉编译工具链
+### 0.2 交叉编译工具链
 
 ​		编译是指将代码经过一系列步骤转换为可执行文件的过程。每个步骤都有对应的工具将前一步骤的输出作为输入进行相应处理，我们称这些工具为编译工具链，包括编译器（Compiler），汇编器（Assembler）和连接器（Linker）
 
@@ -54,7 +54,7 @@ gcc version 7.5.0 (Ubuntu/Linaro 7.5.0-3ubuntu1~18.04)
 
 ​		对自己搭建完整工具链感兴趣的同学，可参考上文链接自行学习制作符合自己使用习惯的工具链。
 
-### 1.3 QEMU 模拟器
+### 0.3 QEMU 模拟器
 
 ​		我们的项目（预期）会在树莓派-3B 上运行，但在上板之前先通过模拟器模拟真实硬件环境来辅助调试内核会有效减少上板运行时出现错误的情况。QEMU 是一个广泛使用的开源计算机模拟器和虚拟机[^QEMU]，可以在一种架构（如 X86 PC）下运行另一种架构（如 ARM）下的操作系统和程序。可直接通过如下指令安装 QEMU
 
@@ -68,7 +68,7 @@ sudo apt install qemu qemu-system-arm qemu-efi-aarch64 qemu-utils
 qemu-system-aarch64 -M help
 ```
 
-### 1.4 GDB
+### 0.4 GDB
 
 ​		系统自带的 gdb 并不支持跨平台的 debug，因此需要安装支持多体系结构的版本
 
@@ -76,7 +76,7 @@ qemu-system-aarch64 -M help
 sudo apt install -y build-essential gdb gdb-multiarch
 ```
 
-### 1.5 Git
+### 0.5 Git
 
 ​		如果是对 git 很熟悉的同学可以跳过小节内容。
 
@@ -96,7 +96,7 @@ git clone https://github.com/FDUCSLG/OS-Autumn20-Fudan.git
 
 ​		对通过 Git 进行版本管理感兴趣的同学可以参考 Git User Manual[^Git-manual] 进一步学习。
 
-### 1.6 GNU Make
+### 0.6 GNU Make
 
 ​		Make 会根据项目文件给定的依赖关系自动找出相应的文件进行编译[^Make 的意义]，因此每个项目都需要一个 “Makefile” 文件来指明依赖关系。Makefile 的规则如下
 
@@ -121,7 +121,7 @@ target ...: prerequisites ...
   
   ​	对 Make 感兴趣的同学，可自行参考 tutorial [^Makefile-tutorial]进行学习。
 
-### 1.7 pwndbg(optional)
+### 0.7 pwndbg(optional)
 
 ​		仅仅是 gdb 的话，调试起来可能会不太美观（方便），建议安装 pwndbg
 
@@ -160,9 +160,9 @@ make -j6
 make install
 ```
 
-### 1.8 Exercise
+### 0.8 Exercise
 
-#### 1.8.1 Git Exercise
+#### 0.8.1 Git Exercise
 
 ​		请确保你当前处于 `OS-2020Fall-Fudan` 文件夹的 `sprint1-lab1` 下，按顺序完成如下操作
 
@@ -188,11 +188,11 @@ make install
 - git log
 - git status
 
-#### 1.8.2 Makefile Exercise
+#### 0.8.2 Makefile Exercise
 
 ​		请画出 `simple/Makefile` 中 make 命令的依赖关系。
 
-### 1.9 参考文献
+### 0.9 参考文献
 
 [^程序员的自我修养]:https://book.douban.com/subject/3652388/
 [^Cross-Compile]:https://blog.csdn.net/hailin0716/article/details/17578767
