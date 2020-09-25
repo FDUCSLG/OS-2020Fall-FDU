@@ -176,7 +176,7 @@ make install
 
 请确认你清楚明白以下 `git` 指令的含义：
 
-- git brahch
+- git branch
 - git checkout
 - git add
 - git commit
