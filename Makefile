@@ -22,7 +22,7 @@ OBJCOPY := $(CROSS)-objcopy
 # -MMD -MP:
 #     generate .d files
 
-CFLAGS := -Wall -g -O2 \
+CFLAGS := -Wall -g \
           -fno-pie -fno-pic -fno-stack-protector \
           -static -fno-builtin -nostdlib -ffreestanding -nostartfiles \
           -mgeneral-regs-only \
@@ -35,6 +35,8 @@ BUILD_DIR = obj
 KERN_ELF := $(BUILD_DIR)/kernel8.elf
 KERN_IMG := $(BUILD_DIR)/kernel8.img
 
+.PHONY: all clean
+
 all: $(KERN_IMG)
 
 # Automatically find sources and headers
@@ -43,10 +45,10 @@ OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
 -include $(DEPS)
 
-$(BUILD_DIR)/%.c.o: %.c
+$(BUILD_DIR)/%.c.o: %.c Makefile
 	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -o $@ $<
-$(BUILD_DIR)/%.S.o: %.S
+$(BUILD_DIR)/%.S.o: %.S Makefile
 	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
@@ -65,8 +67,7 @@ qemu: $(KERN_IMG)
 qemu-gdb: $(KERN_IMG)
 	$(QEMU) -kernel $< -S -gdb tcp::1234
 gdb: 
-	gdb-multiarch -n -x .gdbinit
+	aarch64-linux-gdb -x .gdbinit
 
-.PHONY: clean
 clean:
 	rm -r $(BUILD_DIR)
