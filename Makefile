@@ -28,6 +28,12 @@ CFLAGS := -Wall -g \
           -mgeneral-regs-only \
 	      -MMD -MP
 
+V := @
+# Run 'make V=1' to turn on verbose commands
+ifeq ($(V),1)
+override V =
+endif
+
 CFLAGS += -Iinc
 SRC_DIRS := kern
 BUILD_DIR = obj
@@ -45,27 +51,35 @@ OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
 -include $(DEPS)
 
-$(BUILD_DIR)/%.c.o: %.c Makefile
-	mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c -o $@ $<
-$(BUILD_DIR)/%.S.o: %.S Makefile
-	mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c -o $@ $<
+$(BUILD_DIR)/%.c.o: %.c
+	@echo + cc $<
+	@mkdir -p $(dir $@)
+	$(V)$(CC) $(CFLAGS) -c -o $@ $<
+	
+$(BUILD_DIR)/%.S.o: %.S
+	@echo + as $<
+	@mkdir -p $(dir $@)
+	$(V)$(CC) $(CFLAGS) -c -o $@ $<
 
 $(KERN_ELF): kern/linker.ld $(OBJS)
-	$(LD) -o $@ -T $< $(OBJS)
-	$(OBJDUMP) -S -D $@ > $(basename $@).asm
-	$(OBJDUMP) -x $@ > $(basename $@).hdr
+	@echo + ld $@
+	$(V)$(LD) -o $@ -T $< $(OBJS)
+	@echo + objdump $@
+	$(V)$(OBJDUMP) -S -D $@ > $(basename $@).asm
+	$(V)$(OBJDUMP) -x $@ > $(basename $@).hdr
 
 $(KERN_IMG): $(KERN_ELF)
-	$(OBJCOPY) -O binary $< $@
+	@echo + objcopy $@
+	$(V)$(OBJCOPY) -O binary $< $@
 
-QEMU := qemu-system-aarch64 -M raspi3 -nographic -serial null -chardev stdio,id=uart1 -serial chardev:uart1 -monitor none
+QEMU := qemu-system-aarch64 -M raspi3 -nographic -serial null -serial mon:stdio
 
 qemu: $(KERN_IMG) 
 	$(QEMU) -kernel $<
+
 qemu-gdb: $(KERN_IMG)
 	$(QEMU) -kernel $< -S -gdb tcp::1234
+
 gdb: 
 	aarch64-linux-gdb -x .gdbinit
 

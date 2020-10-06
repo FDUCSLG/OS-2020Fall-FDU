@@ -1,4 +1,4 @@
-#include <stdint.h>
+#include "stdint.h"
 
 #include "memlayout.h"
 #include "mmu.h"
@@ -521,9 +521,9 @@ uint64_t kpte[512] = {
 
 __attribute__((__aligned__(PGSIZE)))
 uint64_t kpud[512] = {
-    V2P(kpte) + PTE_TABLE,
-    0x40000000 + PTE_DEVICE
+    V2P(kpte) + PTE_TABLE + PTE_P,
+    0x40000000 | PTE_DEVICE
 };
 
 __attribute__((__aligned__(PGSIZE)))
-uint64_t kpgdir[512] = { V2P(kpud) + PTE_TABLE };
+uint64_t kpgdir[512] = { V2P(kpud) + PTE_TABLE + PTE_P };

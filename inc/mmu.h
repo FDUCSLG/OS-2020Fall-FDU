@@ -3,17 +3,52 @@
 
 /*
  * See Chapter 12 of ARM Cortex-A Series Programmer's Guide for ARMv8-A
- * and Chapter D5 of Arm Architecture Reference Manual Armv8, for Armv8-A architecture profile.
+ * and Chapter D4(D4.2, D4.3) of Arm Architecture Reference Manual Armv8, for Armv8-A architecture profile.
  */
-#define PGSIZE 4096
 
+/*
+ * A virtual address 'la' has a four-part structure as follows:
+ * +-----9-----+-----9-----+-----9-----+-----9-----+---------12---------+
+ * |  Level 0  |  Level 1  |  Level 2  |  Level 3  | Offset within Page |
+ * |   Index   |   Index   |   Index   |   Index   |                    |
+ * +-----------+-----------+-----------+-----------+--------------------+
+ *  \PTX(va, 0)/\PTX(va, 1)/\PTX(va, 2)/\PTX(va, 3)/
+ */
+
+#define PGSIZE 4096
+#define PGSHIFT 12
+#define L0SHIFT 39
+#define L1SHIFT 30
+#define L2SHIFT 21
+#define L3SHIFT 12
+#define ENTRYSZ 512
+
+#define PTX(level, va) (((uint64_t)(va) >> (39 - 9 * level)) & 0x1FF)
+#define L0X(va) (((uint64_t)(va) >> L0SHIFT) & 0x1FF)
+#define L1X(va) (((uint64_t)(va) >> L1SHIFT) & 0x1FF)
+#define L2X(va) (((uint64_t)(va) >> L2SHIFT) & 0x1FF)
+#define L3X(va) (((uint64_t)(va) >> L3SHIFT) & 0x1FF)
+
+/* accessibility */
+#define PTE_P        (1<<0)      /* valid */
+#define PTE_TABLE    (1<<1)      /* entry gives address of the next level of translation table */
+#define PTE_KERNEL   (0<<6)      /* privileged, supervisor EL1 access only */
+#define PTE_USER     (1<<6)      /* unprivileged, EL0 access allowed */
+#define PTE_RW       (0<<7)      /* read-write */
+#define PTE_RO       (1<<7)      /* read-only */
+#define PTE_AF       (1<<10)     /* access flags */
+// Address in page table or page directory entry
+#define PTE_ADDR(pte)   ((uint64_t)(pte) & ~0xFFF)
+#define PTE_FLAGS(pte)  ((unsigned)(pte) &  0xFFF)
+
+/* P2061 */
 #define MM_TYPE_BLOCK       0x1
 #define MM_TYPE_TABLE       0x3
 
-/* Access permission */
-#define AF_USED           (1 << 10)      /* EL0/1/2/3 can read and write */
-
+/* P2066 */
 /* Access flags */
+#define AF_USED           (1 << 10)      /* EL0/1/2/3 can read and write */
+/* Access permission */
 #define AP_RW             (1 << 6)
 
 /* Memory region attributes */
@@ -24,21 +59,34 @@
 #define MAIR_VALUE              (MT_DEVICE_nGnRnE_FLAGS << (8 * MT_DEVICE_nGnRnE)) | (MT_NORMAL_NC_FLAGS << (8 * MT_NORMAL_NC))
 
 /* PTE flags */
-#define PTE_NORMAL      (MM_TYPE_BLOCK | (MT_NORMAL_NC << 2) | AP_RW)
-#define PTE_DEVICE      (MM_TYPE_BLOCK | (MT_DEVICE_nGnRnE << 2) | AP_RW)
-#define PTE_TABLE       MM_TYPE_TABLE
+#define PTE_NORMAL      (MM_TYPE_BLOCK | (MT_NORMAL_NC << 2) | AF_USED)
+#define PTE_DEVICE      (MM_TYPE_BLOCK | (MT_DEVICE_nGnRnE << 2) | AF_USED)
 
 /* Translation Control Register */
-// Intermediate physical address size 32 bits, 4GB
-#define TCR_IPS         (0b000 << 32)
-// 
+/*
+ * Intermediate physical address size 32 bits, 4GB
+ * If {I}PS is programmed to a value larger than the implemented PA size, then the PE behaves as if programmed with
+ * the implemented PA size, but software must not rely on this behavior
+ */
+#define TCR_IPS         (0 << 32)
+
+/*
+ * For each enabled stage of address translation, 
+ * the TCR_ELx.TxSZ fields specify the input address size:
+ * • TCR_ELx.T0SZ specifies the size for the lower VA range, translated using TTBR0_ELx.
+ * • TCR_ELx.T1SZ specifies the size for the upper VA range, translated using TTBR1_ELx.
+ * The maximum TxSZ value is 39. If TxSZ is programmed to a value larger than 39 then it is
+ * IMPLEMENTATION DEFINED whether:
+ * • The implementation behaves as if the field is programmed to 39 for all purposes other than
+ * reading back the value of the field.
+ * • Any use of the TxSZ value generates a Level 0 Translation fault for the stage of translation
+ * at which TxSZ is used.
+ */
 #define TCR_T0SZ        (64 - 48) 
-// The size offset of the memory region addressed by TTBR1_EL1. 
-// The region size is 2^(64-T1SZ) bytes.
 #define TCR_T1SZ        ((64 - 48) << 16)
-#define TCR_TG0_4K      (0b00 << 14)
-// Granule size for ttbr1_el1 4KB
-#define TCR_TG1_4K      (0b10 << 30)
-#define TCR_VALUE       (TCR_T0SZ | TCR_T1SZ | TCR_TG0_4K | TCR_TG1_4K)
+#define TCR_TG0_4K      (0 << 14)
+/* Granule size for ttbr1_el1 4KB */
+#define TCR_TG1_4K      (2 << 30)
+#define TCR_VALUE       (TCR_T0SZ | TCR_T1SZ | TCR_TG0_4K | TCR_TG1_4K | TCR_IPS)
 
 #endif

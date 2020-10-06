@@ -63,16 +63,10 @@ el1:
     ldr     x0, =(MAIR_VALUE)
     msr     mair_el1, x0
 
-    /* The ISB forces these changes to be seen before the MMU is enabled */
-    isb
-
     /* Modify System Control Register to enable MMU. */
     mrs     x0, sctlr_el1
     orr     x0, x0, #SCTLR_MMU_ENABLED 
     msr     sctlr_el1, x0
-
-    /* The ISB forces these changes to be seen before the next instruction */
-    isb
 
     /* Set up stack pointer. */
     ldr     x1, =_start
