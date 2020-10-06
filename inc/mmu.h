@@ -36,7 +36,7 @@
 #define PTE_USER     (1<<6)      /* unprivileged, EL0 access allowed */
 #define PTE_RW       (0<<7)      /* read-write */
 #define PTE_RO       (1<<7)      /* read-only */
-#define PTE_AF       (1<<10)     /* access flags */
+#define PTE_AF       (1<<10)     /* P2066 access flags */
 // Address in page table or page directory entry
 #define PTE_ADDR(pte)   ((uint64_t)(pte) & ~0xFFF)
 #define PTE_FLAGS(pte)  ((unsigned)(pte) &  0xFFF)
@@ -44,12 +44,6 @@
 /* P2061 */
 #define MM_TYPE_BLOCK       0x1
 #define MM_TYPE_TABLE       0x3
-
-/* P2066 */
-/* Access flags */
-#define AF_USED           (1 << 10)      /* EL0/1/2/3 can read and write */
-/* Access permission */
-#define AP_RW             (1 << 6)
 
 /* Memory region attributes */
 #define MT_DEVICE_nGnRnE        0x0
@@ -59,8 +53,8 @@
 #define MAIR_VALUE              (MT_DEVICE_nGnRnE_FLAGS << (8 * MT_DEVICE_nGnRnE)) | (MT_NORMAL_NC_FLAGS << (8 * MT_NORMAL_NC))
 
 /* PTE flags */
-#define PTE_NORMAL      (MM_TYPE_BLOCK | (MT_NORMAL_NC << 2) | AF_USED)
-#define PTE_DEVICE      (MM_TYPE_BLOCK | (MT_DEVICE_nGnRnE << 2) | AF_USED)
+#define PTE_NORMAL      (MM_TYPE_BLOCK | (MT_NORMAL_NC << 2) | PTE_AF)
+#define PTE_DEVICE      (MM_TYPE_BLOCK | (MT_DEVICE_nGnRnE << 2) | PTE_AF)
 
 /* Translation Control Register */
 /*
