@@ -31,6 +31,8 @@
 
 /* accessibility */
 #define PTE_P        (1<<0)      /* valid */
+#define PTE_BLOCK    (0<<1)
+#define PTE_PAGE     (1<<1)
 #define PTE_TABLE    (1<<1)      /* entry gives address of the next level of translation table */
 #define PTE_KERNEL   (0<<6)      /* privileged, supervisor EL1 access only */
 #define PTE_USER     (1<<6)      /* unprivileged, EL0 access allowed */
@@ -42,8 +44,7 @@
 #define PTE_FLAGS(pte)  ((unsigned)(pte) &  0xFFF)
 
 /* P2061 */
-#define MM_TYPE_BLOCK       0x1
-#define MM_TYPE_TABLE       0x3
+#define MM_TYPE_BLOCK       PTE_P | PTE_BLOCK
 
 /* Memory region attributes */
 #define MT_DEVICE_nGnRnE        0x0
