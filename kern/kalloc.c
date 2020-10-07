@@ -21,7 +21,7 @@ struct {
 } kmem;
 
 void
-alloc_init(void)
+alloc_init()
 {
     free_range(end, P2V(PHYSTOP));
 }
@@ -56,13 +56,13 @@ free_range(void *vstart, void *vend)
  * Returns 0 if the memory cannot be allocated.
  */
 char *
-kalloc(void)
+kalloc()
 {
     /* TODO: Your code here. */
 }
 
 void
-check_free_list(void)
+check_free_list()
 {
     struct run *p;
     if (!kmem.free_list)
