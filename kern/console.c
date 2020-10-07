@@ -1,5 +1,5 @@
 #include <stdarg.h>
-#include "stdint.h"
+#include <stdint.h>
 
 #include "uart.h"
 

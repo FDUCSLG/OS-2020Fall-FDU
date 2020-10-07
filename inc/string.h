@@ -1,7 +1,7 @@
 #ifndef INC_STRING_H
 #define INC_STRING_H
 
-#include "stdint.h"
+#include <stdint.h>
 #include <stddef.h>
 
 static inline int

@@ -2,7 +2,7 @@
 #define INC_CONSOLE_H
 
 #include <stdarg.h>
-#include "stdint.h"
+#include <stdint.h>
 
 void console_init();
 void cprintf(const char *fmt, ...);

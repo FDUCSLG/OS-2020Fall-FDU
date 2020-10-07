@@ -12,7 +12,7 @@
 
 #ifndef __ASSEMBLER__
 
-#include "stdint.h"
+#include <stdint.h>
 #define V2P(a) (((uint64_t) (a)) - KERNBASE)
 #define P2V(a) ((void *)(((char *) (a)) + KERNBASE))
 

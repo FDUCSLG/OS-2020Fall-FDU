@@ -1,7 +1,7 @@
 #ifndef INC_ARM_H
 #define INC_ARM_H
 
-#include "stdint.h"
+#include <stdint.h>
 
 static inline void
 delay(int32_t count)
