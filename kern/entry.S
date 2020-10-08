@@ -37,7 +37,7 @@ el2:
     msr     hcr_el2, x9
 
     /* Setup SCTLR access. */
-    ldr     x9, =(SCTLR_VALUE_MMU_DISABLED)
+    ldr     x9, =SCTLR_VALUE_MMU_DISABLED
     msr     sctlr_el1, x9
 
     /* Change execution level to EL1. */
@@ -54,10 +54,10 @@ el1:
     msr     ttbr0_el1, x9
     msr     ttbr1_el1, x9
 
-    ldr     x9, =(TCR_VALUE)
+    ldr     x9, =TCR_VALUE
     msr     tcr_el1, x9
 
-    ldr     x9, =(MAIR_VALUE)
+    ldr     x9, =MAIR_VALUE
     msr     mair_el1, x9
 
     isb
