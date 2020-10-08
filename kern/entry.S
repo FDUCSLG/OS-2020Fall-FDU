@@ -22,12 +22,6 @@ el3:
     eret
 
 el2:
-    /* Enable CNTP for EL1 */
-    mrs     x9, cnthctl_el2
-    orr     x9, x9, #3
-    msr     cnthctl_el2, x9
-    msr     cntvoff_el2, xzr
-
     /*
      * HCR_EL2.RW, bit[31] = 1: The Execution state for EL1 is AArch64.
      * The Execution state for EL0 is determined by the current
