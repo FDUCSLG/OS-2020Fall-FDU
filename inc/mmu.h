@@ -48,13 +48,13 @@
 
 /* Memory region attributes */
 #define MT_DEVICE_nGnRnE        0x0
-#define MT_NORMAL_NC            0x1
+#define MT_NORMAL               0x1
 #define MT_DEVICE_nGnRnE_FLAGS  0x00
-#define MT_NORMAL_NC_FLAGS      0x44
-#define MAIR_VALUE              (MT_DEVICE_nGnRnE_FLAGS << (8 * MT_DEVICE_nGnRnE)) | (MT_NORMAL_NC_FLAGS << (8 * MT_NORMAL_NC))
+#define MT_NORMAL_FLAGS         0xFF
+#define MAIR_VALUE              (MT_DEVICE_nGnRnE_FLAGS << (8 * MT_DEVICE_nGnRnE)) | (MT_NORMAL_FLAGS << (8 * MT_NORMAL))
 
 /* PTE flags */
-#define PTE_NORMAL      (MM_TYPE_BLOCK | (MT_NORMAL_NC << 2) | PTE_AF)
+#define PTE_NORMAL      (MM_TYPE_BLOCK | (MT_NORMAL << 2) | PTE_AF)
 #define PTE_DEVICE      (MM_TYPE_BLOCK | (MT_DEVICE_nGnRnE << 2) | PTE_AF)
 
 /* Translation Control Register */
@@ -82,6 +82,16 @@
 #define TCR_TG0_4K      (0 << 14)
 /* Granule size for ttbr1_el1 4KB */
 #define TCR_TG1_4K      (2 << 30)
-#define TCR_VALUE       (TCR_T0SZ | TCR_T1SZ | TCR_TG0_4K | TCR_TG1_4K | TCR_IPS)
+#define TCR_SH0_INNER   (3 << 12)
+#define TCR_SH1_INNER   (3 << 28)
+#define TCR_ORGN0_IRGN0 ((1 << 10) | (1 << 8))
+#define TCR_ORGN1_IRGN1 ((1 << 26) | (1 << 24))
+
+#define TCR_VALUE       (TCR_T0SZ           | TCR_T1SZ          |   \
+                         TCR_TG0_4K         | TCR_TG1_4K        |   \
+                         TCR_SH0_INNER      | TCR_SH1_INNER     |   \
+                         TCR_ORGN0_IRGN0    | TCR_ORGN1_IRGN1   |   \
+                         TCR_IPS)
+
 
 #endif
