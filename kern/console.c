@@ -52,7 +52,7 @@ vprintfmt(void (*putch)(int), const char *fmt, va_list ap)
         switch (c) {
         case 'u':
             if (l == 2) printint(va_arg(ap, int64_t), 10, 0);
-            else printint(va_arg(ap, int), 10, 0);
+            else printint(va_arg(ap, uint32_t), 10, 0);
             break;
         case 'd':
             if (l == 2) printint(va_arg(ap, int64_t), 10, 1);
@@ -60,10 +60,10 @@ vprintfmt(void (*putch)(int), const char *fmt, va_list ap)
             break;
         case 'x':
             if (l == 2) printint(va_arg(ap, int64_t), 16, 0);
-            else printint(va_arg(ap, int), 16, 0);
+            else printint(va_arg(ap, uint32_t), 16, 0);
             break;
         case 'p':
-            printint((int64_t)va_arg(ap, void *), 16, 0);
+            printint((uint64_t)va_arg(ap, void *), 16, 0);
             break;
         case 'c':
             putch(va_arg(ap, int));
