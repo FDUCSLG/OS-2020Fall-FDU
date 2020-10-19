@@ -1,8 +1,11 @@
 #include <stdint.h>
 
+#include "arm.h"
 #include "string.h"
 #include "console.h"
 #include "kalloc.h"
+#include "trap.h"
+#include "timer.h"
 
 void
 main()
@@ -12,7 +15,7 @@ main()
      * static/global variables start out zero.
      */
 
-    extern char edata[], end[];
+    extern char edata[], end[], vectors[];
 
     /* TODO: Use `memset` to clear the BSS section of our program. */
     memset(edata, 0, end - edata);    
@@ -21,5 +24,11 @@ main()
     alloc_init();
     cprintf("Allocator: Init success.\n");
     check_free_list();
+
+    irq_init();
+
+    lvbar(vectors);
+    timer_init();
+
     while (1) ;
 }

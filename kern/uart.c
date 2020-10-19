@@ -4,6 +4,7 @@
 #include "arm.h"
 #include "peripherals/mini_uart.h"
 #include "peripherals/gpio.h"
+#include "console.h"
 
 void
 uart_putchar(int c)
@@ -14,11 +15,11 @@ uart_putchar(int c)
 }
 
 char
-uart_getchar()
+uart_intr()
 {
-    while (!(get32(AUX_MU_LSR_REG) & 0x01))
-        ;
-    return get32(AUX_MU_IO_REG) & 0xFF;
+    for (int stat; !((stat = get32(AUX_MU_IIR_REG)) & 1); )
+        if((stat & 6) == 4)
+            cgetchar(get32(AUX_MU_IO_REG) & 0xFF);
 }
 
 void
@@ -29,11 +30,11 @@ uart_init()
     /* initialize UART */
     enables = get32(AUX_ENABLES);
     enables |= 1;
-    put32(AUX_ENABLES, enables);  /* enable UART1, AUX mini uart */
+    put32(AUX_ENABLES, enables);    /* enable UART1, AUX mini uart */
     put32(AUX_MU_CNTL_REG, 0);
     put32(AUX_MU_LCR_REG, 3);       /* 8 bits */
     put32(AUX_MU_MCR_REG, 0);
-    put32(AUX_MU_IER_REG, 0);
+    put32(AUX_MU_IER_REG, 3 << 2 | 1);
     put32(AUX_MU_IIR_REG, 0xc6);    /* disable interrupts */
     put32(AUX_MU_BAUD_REG, 270);    /* 115200 baud */
     /* map UART1 to GPIO pins */

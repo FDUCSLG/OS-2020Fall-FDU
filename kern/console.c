@@ -98,6 +98,12 @@ cprintf(const char *fmt, ...)
 }
 
 void
+cgetchar(int c)
+{
+    cprintf("%c", c);
+}
+
+void
 panic(const char *fmt, ...)
 {
     va_list ap;
