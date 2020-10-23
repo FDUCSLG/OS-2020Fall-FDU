@@ -7,12 +7,12 @@
 3. 设计 trap frame，实现保存并恢复 trap frame （习题）
 4. 理解中断处理函数
 
-首先，请将本次实验新增的代码并入你们的开发分支，即在你们自己的 dev 分支下，如下进行 merge 或 rebase
+首先，请将本次实验新增的代码并入你们的开发分支，即在你们自己的 dev 分支下，如下 pull 后进行 rebase 或 merge
 
 ```bash
 git pull
-git merge origin/lab3
-# Or git rebase origin/lab3
+git rebase origin/lab3
+# Or git merge origin/lab3
 ```
 
 如果出现 conflict，请按照 git 的提示进行即可。
@@ -36,7 +36,7 @@ git merge origin/lab3
 
 在 `kern/main.c` 中我们用 `lvbar` 加载了ARMv8 的中断向量表 `kern/vectors.S`，其作用是，当硬件收到中断信号时，会根据其中断类型（Synchronous/IRQ/FIQ/System Error）和当前 PSTATE（EL0/EL1，AArch32/AArch64），保存中断原因到 ESR_EL1，保存中断发生时的 PC 到 ELR_EL1，然后跳转到不同的地址上。描述这些地址的那张表称为中断向量表。
 
-中断向量表的地址可以通过 VBAR_EL1 配置（注意这是一个**虚拟地址**），表中的每一项是一种中断类型的入口，大小为 128 bytes，共有 16 项。上节中提到过我们只支持从 EL0 到 EL1 的中断，且我们的内核只支持 AArch64，于是在这里只需关注如下两项即可，其他的详见 [ARM Cortex-A Series Programmer's Guide for ARMv8-A Chapter 10.4](https://cs140e.sergio.bz/docs/ARMv8-A-Programmer-Guide.pdf)
+中断向量表的地址可以通过 VBAR_EL1 配置（注意这是一个**虚拟地址**），表中的每一项是一种中断类型的入口，大小为 128 bytes，共有 16 项。上节中提到过我们只支持从 EL0 到 EL1 的中断，且我们的内核只支持 AArch64，于是在这里只需关注如下两项即可，其他的详见 [ARM Cortex-A Series Programmer's Guide for ARMv8-A](https://cs140e.sergio.bz/docs/ARMv8-A-Programmer-Guide.pdf) Chapter 10.4
 
 | Address        | Exception type | Description                           | Usage               |
 | -------------- | -------------- | ------------------------------------- | ------------------- |
@@ -82,10 +82,18 @@ Trap frame 结构体的作用在于保存中断前的所有寄存器加上一些
 
 ### 3.4.1 测试中断
 
-如果想测试一下中断是否正确实现的话，我们需要手动在内核开启中断，看看我们的 timer/clock/uart 是否能够正常中断，需要做如下修改：
+如果想测试一下中断是否正确实现的话，我们需要手动在内核开启中断（**后续请务必记得关闭**，除非你想支持内核态中断），看看我们的 timer/clock/uart 是否能够正常中断，需要做如下修改：
 
 1. 在 `kern/vectors.S` 中将 `verror(5)` 替换成 `ventry`，因为这一项代表在使用 SP_EL1 栈指针的 EL1 的 IRQ 中断。注意到 `kern/entry.S` 中 ` msr spsel, #1` 指令已经将栈指针切换成了 SP_EL1，这就是我们的内核栈，之后用户进程使用的是 SP_EL0。
 2. 在 `kern/main.c:main` 函数最后调用 `inc/arm.h` 中的 `sti` 函数开启中断。
 
 正常的话，qemu 上会有 timer/clock 的输出，输入字母的话也会显示在上面。
 
+
+
+## 3.5 参考资料
+
+实验过程中需重点关注 [ARM Cortex-A Series Programmer's Guide for ARMv8-A](https://cs140e.sergio.bz/docs/ARMv8-A-Programmer-Guide.pdf) 中的 Chapter 9 & 10，其中
+
+- Chapter 9 规范了 ARMv8 架构下汇编和 C 语言之间的交互标准，如各寄存器的用处（哪个是作为函数返回地址的？哪些是 caller/callee 保存的寄存器？），stack frame 结构。在设计 trap frame 的时候会用到相关知识
+- Chapter 10 是关于中断的，其中 10.5 有一段简易的参考代码，类似我们的 trapasm.S
