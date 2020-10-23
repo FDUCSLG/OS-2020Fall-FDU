@@ -5,6 +5,26 @@
 .section ".text.boot"
 .global _start
 _start:
+    /*
+     * Wake up other processors.
+     * See https://github.com/raspberrypi/tools/blob/master/armstubs/armstub8.S
+     * which has been incorporated in start.elf (or bootcode.bin ?)
+     */
+    adr     x0, mp_start
+    mov     x1, #1
+    mov     x2, #2
+    mov     x3, #3
+    mov     x9, 0xd8
+    str     x0, [x9, x1, lsl #3]
+    str     x0, [x9, x2, lsl #3]
+    str     x0, [x9, x3, lsl #3]
+
+    dsb     sy
+    isb
+
+    sev
+
+mp_start:
     /* Get current exception level by CurrentEL[3:2]. */
     mrs     x9, CurrentEL
     and     x9, x9, #0xc
@@ -67,9 +87,14 @@ el1:
     mrs     x0, mpidr_el1
     and     x0, x0, #3
 
+    /* sp = _start - cpuid() * PGSIZE; */
+    mov     x10, #PGSIZE
+    mul     x10, x10, x0
+    ldr     x9, =_start
+    sub     x9, x9, x10
+
     /* Set up stack pointer, must always be 16 bytes aligned. */
     msr     spsel, #1
-    ldr     x9, =_start
     mov     sp, x9
 
     ldr     x9, =main

@@ -1,9 +1,14 @@
+#include "console.h"
+
 #include <stdarg.h>
 #include <stdint.h>
 
+#include "arm.h"
 #include "uart.h"
+#include "spinlock.h"
 
-int panicked;
+static struct spinlock conslock;
+static int panicked = -1;
 
 void
 console_init()
@@ -92,9 +97,15 @@ cprintf(const char *fmt, ...)
 {
     va_list ap;
 
+    acquire(&conslock);
+    if (panicked >= 0 && panicked != cpuid()) {
+        release(&conslock);
+        while (1) ;
+    }
     va_start(ap, fmt);
     vprintfmt(uart_putchar, fmt, ap);
     va_end(ap);
+    release(&conslock);
 }
 
 void
@@ -108,12 +119,17 @@ panic(const char *fmt, ...)
 {
     va_list ap;
 
+    acquire(&conslock);
+    if (panicked < 0) panicked = cpuid();
+    else {
+        release(&conslock);
+        while (1) ;
+    }
     va_start(ap, fmt);
     vprintfmt(uart_putchar, fmt, ap);
     va_end(ap);
+    release(&conslock);
 
-    cprintf("%s:%d: kernel panic.\n", __FILE__, __LINE__);
-    panicked = 1;
-    while (1)
-        ;
+    cprintf("%s:%d: kernel panic at cpu %d.\n", __FILE__, __LINE__, cpuid());
+    while (1) ;
 }
