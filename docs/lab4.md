@@ -1,5 +1,16 @@
 # Lab4 多核与锁
 
+回顾一下 lab3 中的一些问题：
+
+- 栈指针 16 Byte 对齐问题，只用 stp/ldp
+- c 和汇编的交互 trapframe 第一个成员是较低地址的
+- trapframe 是否可以只存 caller-saved 寄存器？
+- sp、SP_SEL、SP_EL1 的关系？
+- SP_EL1 不能直接访问，得先把 SP_SEL 置 1，然后访问 sp 的值
+- call trap(struct trapframe *tf) 中 tf 是 sp，trapframe 里面保存了一个用户栈指针 SP_EL0
+
+
+
 本次实验我们会学习操作系统中多核和锁机制的相关知识，将会涉及如下几个部分：
 
 - 了解 SMP 架构的定义
@@ -39,18 +50,21 @@ armstub8.S 的伪代码如下。简言之，cpuid 为零 的 CPU（相当于 BSP
 ```c
 extern int cpuid();
 
-void boot_kernel(void (*entry)()) {
+void boot_kernel(void (*entry)())
+{
     entry();
 }
 
-void secondary_spin() {
+void secondary_spin()
+{
    	void *entry;
     while (entry = *(void **)(0xd8 + (cpuid() << 3)) == 0)
         asm volatile("wfe");
     boot_kernel(entry);
 }
 
-void main() {
+void main()
+{
     if (cpuid() == 0) boot_kernel(0x80000);
     else secondary_spin();
 }
@@ -78,10 +92,173 @@ void main() {
 
 我们在 `kern/spinlock.c` 中用 GCC 提供的 atomic 宏实现了一种最简单的锁——自旋锁，相应的汇编代码可在导出的 `obj/kernel8.asm` 中找到。当然你也可以尝试着实现 rwlock, mcs, mutex 等较为复杂的锁。
 
-### 4.4.1 习题二
+### 4.4.1 原子操作
+
+下面列出了几种常见的原子操作的伪代码
+
+Test-and-set (atomic exchange)
+
+```c
+int test_and_set(int *p, int new)
+{
+    int old = *p;
+    *p = new;
+    return old;
+}
+```
+
+Fetch-and-add (FAA)
+
+```c
+int fetch_and_add(int *p, int inc)
+{
+    int old = *p;
+    *p += inc;
+    return old;
+}
+```
+
+Compare-and-swap (CAS)
+
+````c
+int compare_and_swap(int *p, int cmp, int new)
+{
+    int old = *p;
+    if (old == cmp)
+        *p = new;
+    return old;
+}
+````
+
+### 4.4.2 自旋锁
+
+```c
+struct spinlock {
+    int locked;
+};
+void spin_lock(struct spinlock *lk)
+{
+    while (test_and_set(lk->locked, 1)) ;
+}
+void spin_unlock(struct spinlock *lk)
+{
+    test_and_set(lk->locked, 0);
+}
+```
+
+### 4.4.3 Ticket lock
+
+```c
+struct ticketlock {
+    int ticket, turn;
+};
+void ticket_lock(struct ticketlock *lk)
+{
+    int t = fetch_and_add(lk->ticket, 1);
+    while (lk->turn != t) ;
+}
+void ticket_unlock(struct ticketlock *lk)
+{
+    lk-turn++;
+}
+```
+
+Ticket lock 中等待的 CPU 都在不停地访问同一个变量 `lk->turn`，一旦锁被释放并修改 `lk->turn`，则需要修改所有等待中的 CPU 的 cache，当 CPU 数较多时，性能较差
+
+### 4.4.4 MCS 锁
+
+这是一种基于队列的锁，对多核的缓存比较友好，并用 test-and-set 和 compare-and-swap 提高了效率，以下实现参考自 [CS140-Synchronization2](http://www.scs.stanford.edu/20wi-cs140/notes/synchronization2.pdf)
+
+```c
+struct mcslock {
+    struct mcslock *next;
+    int locked;
+};
+void mcs_lock(struct mcslock *lk, struct mcslock *i)
+{
+    i->next = i->locked = 0;
+    struct mcslock *pre = test_and_set(&lk->next, i);
+    if (pre) {
+        i->locked = 1;
+        pre->next = i;
+    }
+    while (i->locked) ;
+}
+void mcs_unlock(struct mcslock *lk, struct mcslock *i)
+{
+    if (i->next == 0)
+        if (compare_and_swap(&lk->next, i, 0) == i)
+            return;
+    while (i->next == 0) ;
+    i->next->locked = 0;
+}
+```
+
+### 4.4.5 读写锁
+
+下面用两个自旋锁（或支持睡眠的 mutex）来实现读优先的读写锁
+
+```c
+void read_lock(struct rwlock *lk)
+{
+    acquire(&lk->r);
+    if (lk->b++ == 0)
+        acquire(&lk->w);
+    release(&lk->r);
+}
+void read_unlock(struct rwlock *lk)
+{
+    acquire(&lk->r);
+    if (--lk->b == 0)
+        release(&lk-w);
+    release(&lk->r);
+}
+void write_lock(struct rwlock *lk)
+{
+    acquire(&lk->w);
+}
+void write_unlock(struct rwlock *lk)
+{
+    release(&lk->w);
+}
+```
+
+### 4.4.6 信号量
+
+信号量（Semaphore）适用于控制一个仅支持有限个用户的共享资源，可以保证同一时刻最多有 cnt 个该资源被占用（cnt 的定义如下）。当 cnt 等于 1 时就是互斥锁（Mutex）。
+
+```c
+struct semaphore {
+    int cnt;
+    struct spinlock lk;
+};
+void sem_init(struct semaphore *s, int cnt)
+{
+    s->cnt = cnt;
+}
+void sem_down(struct semaphore *s)
+{
+    acquire(&s->lk);
+    s->cnt--;
+    while (s->cnt < 0)
+        sleep(s, &s->lk); /* Sleep on s. */
+    release(&s->lk);
+}
+void sem_up(struct semaphore *s)
+{
+    acquire(&s->lk);
+    if (s->cnt++ < 0)
+        wakeup_first(s); /* Wake up the first process sleeping on s. */
+    release(&s->lk);
+}
+```
+
+### 4.4.7 习题二
 
 请阅读 `kern/spinlock.c` 并思考一下，如果我们在内核中没有关中断的话，`kern/spinlock.c` 是否有问题？如果有的话，应该如何修改呢？
 
-### 4.4.2 习题三
+### 4.4.8 习题三
 
 注意到所有 CPU 都会并行进入 `kern/main.c:main`，而其中有些初始化函数是只能被调用一次的，请简单描述一下你的判断和理由，并在 `kern/main.c` 中加锁来保证这一点。
+
+
