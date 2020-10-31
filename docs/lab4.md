@@ -199,17 +199,21 @@ void mcs_unlock(struct mcslock *lk, struct mcslock *i)
 下面用两个自旋锁（或支持睡眠的 mutex）来实现读优先的读写锁
 
 ```c
+struct rwlock {
+    struct spinlock r, w; /* Or mutex. */
+    int cnt; /* Number of readers. */
+};
 void read_lock(struct rwlock *lk)
 {
     acquire(&lk->r);
-    if (lk->b++ == 0)
+    if (lk->cnt++ == 0)
         acquire(&lk->w);
     release(&lk->r);
 }
 void read_unlock(struct rwlock *lk)
 {
     acquire(&lk->r);
-    if (--lk->b == 0)
+    if (--lk->cnt == 0)
         release(&lk-w);
     release(&lk->r);
 }
@@ -229,6 +233,7 @@ void write_unlock(struct rwlock *lk)
 
 ```c
 struct semaphore {
+    /* If cnt < 0, -cnt indicates the number of waiters. */
     int cnt;
     struct spinlock lk;
 };
@@ -236,19 +241,18 @@ void sem_init(struct semaphore *s, int cnt)
 {
     s->cnt = cnt;
 }
-void sem_down(struct semaphore *s)
+void sem_wait(struct semaphore *s)
 {
     acquire(&s->lk);
-    s->cnt--;
-    while (s->cnt < 0)
+    if (--s->cnt < 0)
         sleep(s, &s->lk); /* Sleep on s. */
     release(&s->lk);
 }
-void sem_up(struct semaphore *s)
+void sem_signal(struct semaphore *s)
 {
     acquire(&s->lk);
     if (s->cnt++ < 0)
-        wakeup_first(s); /* Wake up the first process sleeping on s. */
+        wakeup1(s); /* Wake up one process sleeping on s. */
     release(&s->lk);
 }
 ```
