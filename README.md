@@ -30,3 +30,8 @@
 - 多核心
 - 其他的调度策略
 - 更多的设备适配
+## 参考资料
+- [Arm® Architecture Reference Manual](https://cs140e.sergio.bz/docs/ARMv8-Reference-Manual.pdf)
+- [Arm® Instruction Set Reference Guide](https://ipads.se.sjtu.edu.cn/courses/os/reference/arm_isa.pdf)
+- [ARM Cortex-A Series Programmer’s Guide for ARMv8-A](https://cs140e.sergio.bz/docs/ARMv8-A-Programmer-Guide.pdf)
+- [ARM GCC Inline Assembler Cookbook](https://www.ic.unicamp.br/~celio/mc404-s2-2015/docs/ARM-GCC-Inline-Assembler-Cookbook.pdf)
