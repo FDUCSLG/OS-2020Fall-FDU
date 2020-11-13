@@ -1,4 +1,4 @@
-# lab4.5 内存顺序
+# Talk 1 内存顺序
 
 回顾 lab 4 中的一些问题：
 
@@ -89,7 +89,7 @@ if (x.load() == 10) {
 
 Thread 3:
 if (y.load() == 10) {
-    assert(x.load() == 20)
+    assert(x.load() == 10);
 }
 ```
 
