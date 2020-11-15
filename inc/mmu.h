@@ -15,13 +15,14 @@
  *  \PTX(va, 0)/\PTX(va, 1)/\PTX(va, 2)/\PTX(va, 3)/
  */
 
-#define PGSIZE 4096
-#define PGSHIFT 12
 #define L0SHIFT 39
 #define L1SHIFT 30
 #define L2SHIFT 21
 #define L3SHIFT 12
 #define ENTRYSZ 512
+
+#define PGSIZE (1 << L3SHIFT)
+#define BKSIZE (1 << L2SHIFT)
 
 #define PTX(level, va) (((uint64_t)(va) >> (39 - 9 * level)) & 0x1FF)
 #define L0X(va) (((uint64_t)(va) >> L0SHIFT) & 0x1FF)
@@ -38,8 +39,9 @@
 #define PTE_USER     (1<<6)      /* unprivileged, EL0 access allowed */
 #define PTE_RW       (0<<7)      /* read-write */
 #define PTE_RO       (1<<7)      /* read-only */
+#define PTE_SH       (3<<8)      /* Shareability */
 #define PTE_AF       (1<<10)     /* P2066 access flags */
-// Address in page table or page directory entry
+/* Address in page table or page directory entry */
 #define PTE_ADDR(pte)   ((uint64_t)(pte) & ~0xFFF)
 #define PTE_FLAGS(pte)  ((unsigned)(pte) &  0xFFF)
 

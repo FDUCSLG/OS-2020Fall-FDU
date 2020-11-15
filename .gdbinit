@@ -1,4 +1,4 @@
-# set architecture aarch64
+set architecture aarch64
 target remote localhost:1234
 file obj/kernel8.elf
 

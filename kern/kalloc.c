@@ -5,6 +5,7 @@
 #include "memlayout.h"
 #include "console.h"
 #include "kalloc.h"
+#include "spinlock.h"
 
 extern char end[];
 
@@ -33,7 +34,7 @@ kfree(char *v)
     struct run *r;
 
     if ((uint64_t)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
-        panic("kfree");
+        panic("kfree\n");
 
     /* Fill with junk to catch dangling refs. */
     memset(v, 1, PGSIZE);
@@ -66,7 +67,7 @@ check_free_list()
 {
     struct run *p;
     if (!kmem.free_list)
-        panic("'kmem.free_list' is a null pointer!");
+        panic("kmem.free_list is a null pointer!\n");
 
     for (p = kmem.free_list; p; p = p->next) {
         assert((void *)p > (void *)end);
