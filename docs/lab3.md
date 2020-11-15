@@ -1,4 +1,4 @@
-# Lab3 异常与中断
+# Lab3 中断与异常
 
 本次实验我们会学习操作系统里中断相关的知识，将会涉及如下几个部分
 
@@ -84,7 +84,7 @@ Trap frame 结构体的作用在于保存中断前的所有寄存器加上一些
 
 如果想测试一下中断是否正确实现的话，我们需要手动在内核开启中断（**后续请务必记得关闭**，除非你想支持内核态中断），看看我们的 timer/clock/uart 是否能够正常中断，需要做如下修改：
 
-1. 在 `kern/vectors.S` 中将 `verror(5)` 替换成 `ventry`，因为这一项代表在使用 SP_EL1 栈指针的 EL1 的 IRQ 中断。注意到 `kern/entry.S` 中 ` msr spsel, #1` 指令已经将栈指针切换成了 SP_EL1，这就是我们的内核栈，之后用户进程使用的是 SP_EL0。
+1. 在 `kern/vectors.S` 中将 `verror(5)` 替换成 `ventry`，因为这一项代表在使用 SP_EL1 栈指针的 EL1 的 IRQ 中断。注意到 `kern/entry.S` 中 `msr spsel, #1` 指令已经将栈指针切换成了 SP_EL1，这就是我们的内核栈，之后用户进程使用的是 SP_EL0。
 2. 在 `kern/main.c:main` 函数最后调用 `inc/arm.h` 中的 `sti` 函数开启中断。
 
 正常的话，qemu 上会有 timer/clock 的输出，输入字母的话也会显示在上面。

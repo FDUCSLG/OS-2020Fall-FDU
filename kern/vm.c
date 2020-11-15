@@ -7,6 +7,9 @@
 
 #include "vm.h"
 #include "kalloc.h"
+#include "proc.h"
+
+extern uint64_t *kpgdir;
 
 /* 
  * Given 'pgdir', a pointer to a page directory, pgdir_walk returns
@@ -31,7 +34,7 @@ pgdir_walk(uint64_t *pgdir, const void *va, int64_t alloc)
  * Create PTEs for virtual addresses starting at va that refer to
  * physical addresses starting at pa. va and size might **NOT**
  * be page-aligned.
- * Use permission bits perm|PTE_P|PTE_TABLE|PTE_AF for the entries.
+ * Use permission bits perm|PTE_P|PTE_TABLE|(MT_NORMAL << 2)|PTE_AF|PTE_SH for the entries.
  *
  * Hint: call pgdir_walk to get the corresponding page table entry
  */
@@ -50,6 +53,34 @@ map_region(uint64_t *pgdir, void *va, uint64_t size, uint64_t pa, int64_t perm)
 
 void
 vm_free(uint64_t *pgdir, int level)
+{
+    /* TODO: Your code here. */
+}
+
+/* Get a new page table */
+uint64_t *
+pgdir_init()
+{
+    /* TODO: Your code here. */
+}
+
+/* 
+ * Load binary code into address 0 of pgdir.
+ * sz must be less than a page.
+ * The page table entry should be set with
+ * additional PTE_USER|PTE_RW|PTE_PAGE permission
+ */
+void
+uvm_init(uint64_t *pgdir, char *binary, int sz)
+{
+    /* TODO: Your code here. */
+}
+
+/*
+ * switch to the process's own page table for execution of it
+ */
+void
+uvm_switch(struct proc *p)
 {
     /* TODO: Your code here. */
 }

@@ -4,6 +4,9 @@ LD := $(CROSS)-ld
 OBJDUMP := $(CROSS)-objdump
 OBJCOPY := $(CROSS)-objcopy
 
+
+COPY := cp -f
+
 # -fno-pie -fno-pic:
 #     Remove .got and data.rel sections.
 #     Run `objdump -t obj/kernel8.elf | sort` to see the difference
@@ -22,12 +25,19 @@ OBJCOPY := $(CROSS)-objcopy
 # -MMD -MP:
 #     generate .d files
 
+# link the libgcc.a for __aeabi_idiv. ARM has no native support for div
+LIBS = $(LIBGCC)
+
 CFLAGS := -Wall -g \
-          -fno-pie -fno-pic -fno-stack-protector \
+          -fno-pie -no-pie -fno-pic \
+		  -fno-omit-frame-pointer -fno-stack-protector \
           -fno-zero-initialized-in-bss \
+		  -fno-strict-aliasing \
           -static -fno-builtin -nostdlib -ffreestanding -nostartfiles \
           -mgeneral-regs-only \
           -MMD -MP
+
+ASFLAGS := -march=armv8-a
 
 V := @
 # Run 'make V=1' to turn on verbose commands
@@ -35,8 +45,16 @@ ifeq ($(V),1)
 override V =
 endif
 
-CFLAGS += -Iinc
+V := @
+# Run 'make V=1' to turn on verbose commands
+ifeq ($(V),1)
+override V =
+endif
+
+CFLAGS += -Iinc -mcmodel=large -mpc-relative-literal-loads
+ASFLAGS += -Iinc
 SRC_DIRS := kern
+USR_DIRS := user
 BUILD_DIR = obj
 
 KERN_ELF := $(BUILD_DIR)/kernel8.elf
@@ -62,9 +80,20 @@ $(BUILD_DIR)/%.S.o: %.S
 	@mkdir -p $(dir $@)
 	$(V)$(CC) $(CFLAGS) -c -o $@ $<
 
-$(KERN_ELF): kern/linker.ld $(OBJS)
+$(BUILD_DIR)/$(USR_DIRS)/initcode: $(USR_DIRS)/initcode.S
+	@echo + as $<
+	@mkdir -p $(dir $@)
+	$(V)$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/$(USR_DIRS)/initcode.o $<
+	@echo + ld $(BUILD_DIR)/$(USR_DIRS)/initcode.out
+	$(V)$(LD) -N -e start -Ttext 0 -o $(BUILD_DIR)/$(USR_DIRS)/initcode.out $(BUILD_DIR)/$(USR_DIRS)/initcode.o
+	@echo + objcopy $@
+	$(V)$(OBJCOPY) -S -O binary --prefix-symbols="_binary_$@" $(BUILD_DIR)/$(USR_DIRS)/initcode.out $@
+	@echo + objdump $(BUILD_DIR)/$(USR_DIRS)/initcode.o
+	$(V)$(OBJDUMP) -S $(BUILD_DIR)/$(USR_DIRS)/initcode.o > $(BUILD_DIR)/$(USR_DIRS)/initcode.asm
+
+$(KERN_ELF): kern/linker.ld $(OBJS) $(BUILD_DIR)/$(USR_DIRS)/initcode
 	@echo + ld $@
-	$(V)$(LD) -o $@ -T $< $(OBJS)
+	$(V)$(LD) -T $< -o $@ $(OBJS) $(LIBS) -b binary $(BUILD_DIR)/$(USR_DIRS)/initcode
 	@echo + objdump $@
 	$(V)$(OBJDUMP) -S -d $@ > $(basename $@).asm
 	$(V)$(OBJDUMP) -x $@ > $(basename $@).hdr
@@ -75,14 +104,14 @@ $(KERN_IMG): $(KERN_ELF)
 
 QEMU := qemu-system-aarch64 -M raspi3 -nographic -serial null -serial mon:stdio
 
-qemu: $(KERN_IMG) 
+qemu: $(KERN_IMG)
 	$(QEMU) -kernel $<
 
 qemu-gdb: $(KERN_IMG)
 	$(QEMU) -kernel $< -S -gdb tcp::1234
 
 gdb: 
-	aarch64-linux-gdb -x .gdbinit
+	gdb-multiarch -n -x .gdbinit
 
 clean:
 	rm -r $(BUILD_DIR)

@@ -18,7 +18,7 @@ char
 uart_intr()
 {
     for (int stat; !((stat = get32(AUX_MU_IIR_REG)) & 1); )
-        if((stat & 6) == 4)
+        if ((stat & 6) == 4)
             cgetchar(get32(AUX_MU_IO_REG) & 0xFF);
 }
 
