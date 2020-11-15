@@ -6,7 +6,7 @@
 
 #### 5.1.1 实验目标
 
-　　在本次实验中，需要实现教学操作系统内核的进程管理部分，分为两部分：
+　　在本次实验中，需要实现教学操作系统内核的进程管理部分，分为：
 
 - 内核的进程管理模块，负责进程的创建、调度（执行）
 - 内核的（简单）系统调用模块，负责响应用户进程请求的系统调用
@@ -25,9 +25,16 @@ git rebase origin/lab5
 
 如果出现 conflict，请按照 git 的提示进行即可。
 
+#### 5.1.3 xv6 手册
+
+　　本次实验可以参考 xv6 实验手册
+
+- Chap1：Operating system organization 从 Code: creating the first process 开始到 Chap1 截止的部分
+- Chap5：Scheduling 部分
+
 ### 5.2 进程管理
 
-​		我们在 `inc/proc.h` 定义了 xv6 中进程的概念（本实验中仅需关注如下内容），每个进程都拥有自己的内核栈，页表（与对应的地址空间），以及对应的上下文信息。
+​		我们在 `inc/proc.h` 定义了 xv6 中进程的概念（本实验中仅需关注如下内容），每个进程都拥有自己的内核栈，页表（与对应的地址空间）以及上下文信息。
 
 ```c++
 struct proc {
@@ -48,7 +55,7 @@ struct proc {
 
 #### 5.2.2 Context switch
 
-　　context switch（即上下文切换）是操作系统多道程序设计（multitasking/multiprogramming）的重要组成部分，它描述了从一个进程切换到另一个进程的过程，包括切换通用寄存器堆、运行时栈（即每个进程的内核栈）以及 PC（lr/x30 寄存器）。
+　　context switch（即上下文切换）是操作系统多道程序设计（multitasking/multiprogramming）的重要组成部分，它实现了从一个进程切换到另一个进程，此时需要切换能准确描述当前进程在 CPU 上运行情况的上下文信息包括通用寄存器堆、运行时栈（即每个进程的内核栈）以及 PC（lr/x30 寄存器）。
 
 <img src="Pic/Context-switch.png">
 
@@ -56,7 +63,7 @@ struct proc {
 
 #### 5.2.3 问题二
 
-　　在 `kern/proc.c` 中将 `swtch` 声明为 `void swtch(struct context **, struct context *)`，请说明为什么要这样设计（Hint：如果声明为 `void swtch(struct context *, struct context *)` 有什么问题）？`context` 中仅需要存储 callee-saved registers，请结合 PCS，并且与 trapframe 作对比，解释为什么 trapframe 需要存储这么多信息解释一下为什么？
+　　在 `kern/proc.c` 中将 `swtch` 声明为 `void swtch(struct context **, struct context *)`，请说明为什么要这样设计（Hint：如果声明为 `void swtch(struct context *, struct context *)` 有什么问题）？`context` 中仅需要存储 callee-saved registers，请结合 PCS 说明为什么？与 trapframe 对比，请说明为什么 trapframe 需要存储这么多信息？trapframe **似乎** 已经包含了 context 中的内容，为什么上下文切换时还需要先 trap 再 switch？
 
 >  For the Arm architecture, the Procedure Call Standard, or PCS specifies:
 >
@@ -69,11 +76,19 @@ struct proc {
 
 #### 5.2.4 创建与调度进程
 
-　　请根据 `kern/proc.c` 中相应代码的注释完成内核进程管理模块以支持调度第一个用户进程 `user/initcode.S`。因为当前内核中还没有文件系统，通过修改 Makefile 文件将 `initcode.S` 链接进了 kernel 中。大致流程为：首先将 `initcode.S` 编译、转换为 `obj/user` 下的二进制文件，再与 `kern` 目录下编译出的内核代码共同链接成内核的可执行文件，`make qemu` 后可在 `obj/kernel8.hdr` 的 symbol table 中发现与之相关的三个 symbol：\_binary_obj_user_initcode_size、\_binary_obj_user_initcode_start、\_binary_obj_user_initcode_end 来告知内核 `initcode` 的位置信息。
+　　请根据 `kern/proc.c` 中相应代码的注释完成内核进程管理模块以支持调度第一个用户进程 `user/initcode.S`。因为当前内核中还没有文件系统，我们通过修改 Makefile 文件将 `initcode.S` 链接进了 kernel 中。大致流程为：首先将 `initcode.S` 编译、转换为 `obj/user` 下的二进制文件，再与 `kern` 目录下编译出的内核代码共同链接成内核的可执行文件，`make qemu` 后可在 `obj/kernel8.hdr` 的 symbol table 中发现与之相关的三个 symbol：\_binary_obj_user_initcode_size、\_binary_obj_user_initcode_start、\_binary_obj_user_initcode_end 来告知内核 `initcode` 的位置信息。
 
-可参照如下顺序实现
+可参照如下顺序实现 `kern/proc` 下的函数
 
-- 
+- proc_init 完成 ptable 锁的初始化
+- user_init 初始化第一个用户进程 `user/initcode.S`
+  - proc_alloc 创建一个进程
+  - pgdir_init 为进程创建一张页表
+  - uvm_init 将进程的页表初始化
+- scheduler 内核开始调度
+  - uvm_switch 为用户进程切换页表（ttbr0_el1）
+  - swtch 从内核的调度器切换到用户进程
+  - forkret 过渡，为以后的一些初始化留位置
 
 ### 5.3 系统调用
 
@@ -81,48 +96,11 @@ struct proc {
 
 　　用户进程在请求系统调用时，应告知内核相应的 system call number 以及系统调用所需的参数信息，system call number 的宏定义可见 `inc/syscallno.h`。
 
-allocproc is written so that it can be used by fork as well as when creating the first process
+可参照如下顺序实现
 
-
-
-why initialize the pcb like this?
-
-**why release lock in forkret?** keep lock for illusion that scheduler always hold ptable.lock
-
-
-
-allocproc sets up the new process with a specially prepared kernel stack and set of kernel registers that cause it to ‘‘return’’ to user space when it first runs. allocproc does part of this work by setting up return program counter values that will cause the new process’s kernel thread to first execute in forkret and then in trapret (2507-2512).
-
-The kernel thread will start executing with register contents copied from p->context. Thus setting p- >context->eip to forkret will cause the kernel thread to execute at the start of forkret.
-
-
-
-> The context switch code (3058) sets the stack pointer to point just beyond the end of p->context. allocproc places p->context on the stack, and puts a pointer to trapret just above it
-
-something changes
-
-
-
-for context
-
-
-
-Chap 1 Code: creating the first process
-
-proc_alloc 分配一个新的进程
-user_init 初始化一个用户进程
-scheduler 调度器
-sched
-forkret
-exit
-swtch-trapasm
-kvm_init
-uvm_init
-initcode.S
-
-syscall-sysfile-sysproc
-
-
+- 从 `alltraps` 跳转到 `kern/trap.c` 中的 `trap` 函数， 当因为系统调用而陷入时进入 `syscall` 中
+- 在 `kern/syscall.c` 中的 `syscall` 中根据 system call number 跳转到相应的 handler 中。
+- `sys_exec` 已经在 `kern/sysfile.c` 中实现，`sys_exit` 定义在了 `kern/sysproc.c` 中。
 
 在成功实现所有模块后，`make qemu` 在单处理器模式下应显示
 
@@ -150,7 +128,7 @@ sys_exec: executing /init with parameters: /init
 sys_exit: in exit
 ```
 
-### 5.x 参考文献
+### 5.4 参考文献
 
 [^PCS]:https://developer.arm.com/architectures/learn-the-architecture/aarch64-instruction-set-architecture/procedure-call-standard
 [^ESR_EL1]:https://developer.arm.com/docs/ddi0595/h/aarch64-system-registers/esr_el1
