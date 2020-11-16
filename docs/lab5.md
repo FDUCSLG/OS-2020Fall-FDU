@@ -101,6 +101,7 @@ struct proc {
 - 从 `alltraps` 跳转到 `kern/trap.c` 中的 `trap` 函数， 当因为系统调用而陷入时进入 `syscall` 中
 - 在 `kern/syscall.c` 中的 `syscall` 中根据 system call number 跳转到相应的 handler 中。
 - `sys_exec` 已经在 `kern/sysfile.c` 中实现，`sys_exit` 定义在了 `kern/sysproc.c` 中。
+- 为 kernel thread 添加一个 sys_yield 操作，当用户进程当前时间片耗尽时， kernel thread 可以通过 yield 让用户进程放弃占用 CPU
 
 在成功实现所有模块后，`make qemu` 在单处理器模式下应显示
 
