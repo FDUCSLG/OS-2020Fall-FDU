@@ -51,7 +51,7 @@ struct proc {
 
 #### 5.2.1 问题一
 
-　　在 proc（即 PCB）中仅存储了进程的 trapframe 与 context 指针，请说明 trapframe 与 context 的实例存在何处，为什么要这样设计？（Hint：如果在 proc 中存储 `struct proc parent` 与 `struct trapframe tf` 能否实现 trap 与 context switch）
+　　在 proc（即 PCB）中仅存储了进程的 trapframe 与 context 指针，请说明 trapframe 与 context 的实例存在何处，为什么要这样设计？（Hint：如果在 proc 中存储 `struct context context` 与 `struct trapframe tf` 能否实现 trap 与 context switch）
 
 #### 5.2.2 Context switch
 
