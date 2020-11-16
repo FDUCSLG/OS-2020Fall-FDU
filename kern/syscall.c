@@ -84,7 +84,7 @@ argptr(int n, char **pp, int size)
 
     struct proc *proc = thiscpu->proc;
 
-    if ((uint64_t)i >= proc->sz || (uint64_t)i+size > proc->sz) {
+    if ((uint64_t)i >= proc->sz || (uint64_t)i + size > proc->sz) {
         return -1;
     }
 
