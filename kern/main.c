@@ -9,6 +9,8 @@
 #include "spinlock.h"
 #include "proc.h"
 
+struct cpu cpus[NCPU];
+
 void
 main()
 {
