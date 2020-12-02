@@ -1,8 +1,8 @@
-CROSS := aarch64-linux-gnu
-CC := $(CROSS)-gcc
-LD := $(CROSS)-ld
-OBJDUMP := $(CROSS)-objdump
-OBJCOPY := $(CROSS)-objcopy
+CROSS := aarch64-linux-gnu-
+CC := $(CROSS)gcc
+LD := $(CROSS)ld
+OBJDUMP := $(CROSS)objdump
+OBJCOPY := $(CROSS)objcopy
 
 
 COPY := cp -f
@@ -59,10 +59,13 @@ BUILD_DIR = obj
 
 KERN_ELF := $(BUILD_DIR)/kernel8.elf
 KERN_IMG := $(BUILD_DIR)/kernel8.img
+SD_IMG := $(BUILD_DIR)/sd.img
 
-.PHONY: all clean
+.PHONY: all init clean
 
-all: $(KERN_IMG)
+all:
+	$(MAKE) -C user
+	$(MAKE) $(SD_IMG)
 
 # Automatically find sources and headers
 SRCS := $(shell find $(SRC_DIRS) -name *.c -or -name *.S)
@@ -102,6 +105,8 @@ $(KERN_IMG): $(KERN_ELF)
 	@echo + objcopy $@
 	$(V)$(OBJCOPY) -O binary $< $@
 
+-include mksd.mk
+
 QEMU := qemu-system-aarch64 -M raspi3 -nographic -serial null -serial mon:stdio
 
 qemu: $(KERN_IMG)
@@ -112,6 +117,10 @@ qemu-gdb: $(KERN_IMG)
 
 gdb: 
 	gdb-multiarch -n -x .gdbinit
+
+init:
+	git submodule update --init --recursive
+	(cd libc && export CROSS_COMPILE=$(CROSS) && ./configure --target=$(ARCH))
 
 clean:
 	rm -r $(BUILD_DIR)

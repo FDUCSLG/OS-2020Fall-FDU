@@ -10,6 +10,30 @@ delay(int32_t count)
                  "=r"(count): [count]"0"(count) : "cc");
 }
 
+/* Wait N microsec. */
+static inline void
+delayus(uint32_t n)
+{
+    uint64_t f, t, r;
+    /* Get the current counter frequency */
+    asm volatile ("mrs %[freq], cntfrq_el0" : [freq]"=r"(f));
+    /* Read the current counter. */
+    asm volatile ("mrs %[cnt], cntpct_el0" : [cnt]"=r"(t));
+    /* Calculate expire value for counter */
+    t += f / 1000000 * n;
+    do {
+        asm volatile ("mrs %[cnt], cntpct_el0" : [cnt]"=r"(r));
+    } while (r < t);
+}
+
+static inline uint64_t
+timestamp()
+{
+    uint64_t t;
+    asm volatile ("mrs %[cnt], cntpct_el0" : [cnt]"=r"(t));
+    return t;
+}
+
 static inline void
 put32(uint64_t p, uint32_t x)
 {
@@ -41,6 +65,14 @@ static inline void
 disb()
 {
     asm volatile("dsb sy; isb");
+}
+
+/* Data cache clean and invalidate by virtual address to point of coherency. */
+static inline void
+dccivac(void *p, int n)
+{
+    while (n--)
+        asm volatile("dc civac, %[x]" : : [x]"r"(p + n));
 }
 
 /* Read Exception Syndrome Register (EL1). */

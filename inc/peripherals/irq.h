@@ -16,6 +16,7 @@
 #define DISABLE_BASIC_IRQS      (MMIO_BASE + 0xB224)
 
 #define AUX_INT                 (1 << 29)
+#define VC_ARASANSDIO_INT       (1 << 30)
 
 /* ARM Local Peripherals */
 #define GPU_INT_ROUTE           (LOCAL_BASE + 0xC)

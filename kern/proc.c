@@ -109,3 +109,21 @@ exit()
     struct proc *p = thiscpu->proc;
     /* TODO: Your code here. */
 }
+
+/*
+ * Atomically release lock and sleep on chan.
+ * Reacquires lock when awakened.
+ */
+void
+sleep(void *chan, struct spinlock *lk)
+{
+    /* TODO: Your code here. */
+}
+
+/* Wake up all processes sleeping on chan. */
+void
+wakeup(void *chan)
+{
+    /* TODO: Your code here. */
+}
+
