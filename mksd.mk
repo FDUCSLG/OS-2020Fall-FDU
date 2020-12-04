@@ -24,7 +24,7 @@ $(BOOT_IMG): $(KERN_IMG) $(shell find boot/*)
 	# Copy files into boot partition
 	$(foreach x, $^, mcopy -i $@ $(x) ::$(notdir $(x));)
 
-$(FS_IMG): $(shell find user/bin -type f)
+$(FS_IMG): $(shell find obj/user/bin -type f)
 	echo $^
 	cc $(shell find user/src/mkfs/ -name "*.c") -o obj/mkfs
 	./obj/mkfs $@ $^

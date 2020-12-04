@@ -123,4 +123,6 @@ init:
 	(cd libc && export CROSS_COMPILE=$(CROSS) && ./configure --target=$(ARCH))
 
 clean:
-	rm -r $(BUILD_DIR)
+	$(MAKE) -C user clean
+	$(MAKE) -C libc clean
+	rm -rf $(BUILD_DIR)
