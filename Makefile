@@ -107,12 +107,12 @@ $(KERN_IMG): $(KERN_ELF)
 
 -include mksd.mk
 
-QEMU := qemu-system-aarch64 -M raspi3 -nographic -serial null -serial mon:stdio
+QEMU := qemu-system-aarch64 -M raspi3 -nographic -serial null -serial mon:stdio -drive file=$(SD_IMG),if=sd,format=raw
 
-qemu: $(KERN_IMG)
+qemu: $(KERN_IMG) $(SD_IMG)
 	$(QEMU) -kernel $<
 
-qemu-gdb: $(KERN_IMG)
+qemu-gdb: $(KERN_IMG) $(SD_IMG)
 	$(QEMU) -kernel $< -S -gdb tcp::1234
 
 gdb: 
