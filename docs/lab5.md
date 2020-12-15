@@ -51,7 +51,7 @@ struct proc {
 
 #### 5.2.1 问题一
 
-　　在 proc（即 PCB）中仅存储了进程的 trapframe 与 context 指针，请说明 trapframe 与 context 的实例存在何处，为什么要这样设计？（Hint：如果在 proc 中存储 `struct context context` 与 `struct trapframe tf` 能否实现 trap 与 context switch）
+　　在 proc（即 PCB）中仅存储了进程的 trapframe 与 context 指针，请说明 trapframe 与 context 的实例存在何处，如果在 proc 中存储 `struct context context` 与 `struct trapframe tf` 应如何实现 trap 与 context switch？
 
 #### 5.2.2 Context switch
 
@@ -63,7 +63,7 @@ struct proc {
 
 #### 5.2.3 问题二
 
-　　在 `kern/proc.c` 中将 `swtch` 声明为 `void swtch(struct context **, struct context *)`，请说明为什么要这样设计（Hint：如果声明为 `void swtch(struct context *, struct context *)` 有什么问题）？`context` 中仅需要存储 callee-saved registers，请结合 PCS 说明为什么？与 trapframe 对比，请说明为什么 trapframe 需要存储这么多信息？trapframe **似乎** 已经包含了 context 中的内容，为什么上下文切换时还需要先 trap 再 switch？
+　　在 `kern/proc.c` 中将 `swtch` 声明为 `void swtch(struct context **, struct context *)`，如果声明为 `void swtch(struct context *, struct context *)` 应如何实现？`context` 中仅需要存储 callee-saved registers，请结合 PCS 说明为什么？与 trapframe 对比，请说明为什么 trapframe 需要存储这么多信息？trapframe **似乎** 已经包含了 context 中的内容，为什么上下文切换时还需要先 trap 再 switch？
 
 >  For the Arm architecture, the Procedure Call Standard, or PCS specifies:
 >
