@@ -54,6 +54,10 @@ el2:
     ldr     x9, =SCTLR_VALUE_MMU_DISABLED
     msr     sctlr_el1, x9
 
+    /* Enable SIMD instructions. */
+    ldr     x9, =CPACR_VALUE
+    msr     cpacr_el1, x9
+
     /* Change execution level to EL1. */
     mov     x9, #SPSR_EL2_VALUE
     msr     spsr_el2, x9

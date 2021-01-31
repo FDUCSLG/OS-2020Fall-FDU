@@ -13,6 +13,10 @@ alltraps:
 
     /* TODO: Your code here. */
 
+    /* Save Q0 to placate musl such as `str q0, [sp, #-16]!` */
+
+    /* TODO: Your code here. */
+
     /*
      * Call trap(struct *trapframe).
      * Hint: The first argument is a stack pointer.
@@ -28,6 +32,10 @@ trapret:
      * Hint: `ldp x1, x2, [sp], #16` is equivalent to first `pop x1`
      * and then `pop x2`.
      */
+
+    /* TODO: Your code here. */
+
+    /* Restore Q0 to placate musl such as `ldr q0, [sp], #16`. */
 
     /* TODO: Your code here. */
 

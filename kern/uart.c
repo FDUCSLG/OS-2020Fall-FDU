@@ -14,12 +14,19 @@ uart_putchar(int c)
     put32(AUX_MU_IO_REG, c & 0xFF);
 }
 
-char
+int
+uart_getchar()
+{
+    int stat = get32(AUX_MU_IIR_REG);
+    if ((stat & 1) || (stat & 6) != 4)
+        return -1;
+    return get32(AUX_MU_IO_REG) & 0xFF;
+}
+
+void
 uart_intr()
 {
-    for (int stat; !((stat = get32(AUX_MU_IIR_REG)) & 1); )
-        if ((stat & 6) == 4)
-            cgetchar(get32(AUX_MU_IO_REG) & 0xFF);
+    console_intr(uart_getchar);
 }
 
 void

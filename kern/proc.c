@@ -127,3 +127,42 @@ wakeup(void *chan)
     /* TODO: Your code here. */
 }
 
+/* Give up CPU. */
+void
+yield()
+{
+    /* TODO: Your code here. */
+}
+
+/*
+ * Create a new process copying p as the parent.
+ * Sets up stack to return as if from system call.
+ * Caller must set state of returned proc to RUNNABLE.
+ */
+int
+fork()
+{
+    /* TODO: Your code here. */
+}
+
+/*
+ * Wait for a child process to exit and return its pid.
+ * Return -1 if this process has no children.
+ */
+int
+wait()
+{
+    /* TODO: Your code here. */
+}
+
+/*
+ * Print a process listing to console.  For debugging.
+ * Runs when user types ^P on console.
+ * No lock to avoid wedging a stuck machine further.
+ */
+void
+procdump()
+{
+    panic("unimplemented");
+}
+

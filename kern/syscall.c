@@ -1,6 +1,6 @@
+#include "syscall.h"
 #include "string.h"
 #include "proc.h"
-#include "syscall.h"
 #include "console.h"
 
 /* 
@@ -63,7 +63,7 @@ argint(int n, uint64_t *ip)
 
     struct proc *proc = thiscpu->proc;
 
-    *ip = *(&proc->tf->r1 + n);
+    // *ip = *(&proc->tf->r1 + n);
 
     return 0;
 }
@@ -136,5 +136,99 @@ syscall()
      * }
      */
     /* TODO: Your code here. */
+
     return 0;
 }
+
+/* TODO: If you want to use musl
+ *
+ * 1. Remove inc/syscall.h and inc/syscallno.h
+ * 2. Include <syscall.h> from musl.
+ * 3. Rename `syscall()` to `syscall1()`.
+ * 4. Hack some syscalls for musl as follows.
+ *
+ * ```
+ * int
+ * syscall1(struct trapframe *tf)
+ * {
+ *     thisproc()->tf = tf;
+ *     int sysno = tf->x[8];
+ *     switch (sysno) {
+ * 
+ *     // FIXME: Use pid instead of tid since we don't have threads :)
+ *     case SYS_set_tid_address:
+ *     case SYS_gettid:
+ *         return thisproc()->pid;
+ * 
+ *     // FIXME: Hack TIOCGWINSZ(get window size)
+ *     case SYS_ioctl:
+ *         if (tf->x[1] == 0x5413) return 0;
+ *         else panic("ioctl unimplemented. ");
+ * 
+ *     // FIXME: Always return 0 since we don't have signals  :)
+ *     case SYS_rt_sigprocmask:
+ *         return 0;
+ * 
+ *     case SYS_brk:
+ *         return sys_brk();
+ * 
+ *     case SYS_execve:
+ *         return sys_exec();
+ * 
+ *     case SYS_sched_yield:
+ *         return sys_yield();
+ * 
+ *     case SYS_clone:
+ *         return sys_clone();
+ * 
+ *     case SYS_wait4:
+ *         return sys_wait4();
+ * 
+ *     // FIXME: exit_group should kill every thread in the current thread group.
+ *     case SYS_exit_group:
+ *     case SYS_exit:
+ *         return sys_exit();
+ * 
+ *     case SYS_dup:
+ *         return sys_dup();
+ * 
+ *     case SYS_chdir:
+ *         return sys_chdir();
+ * 
+ *     case SYS_fstat:
+ *         return sys_fstat();
+ * 
+ *     case SYS_newfstatat:
+ *         return sys_fstatat();
+ * 
+ *     case SYS_mkdirat:
+ *         return sys_mkdirat();
+ * 
+ *     case SYS_mknodat:
+ *         return sys_mknodat();
+ *         
+ *     case SYS_openat:
+ *         return sys_openat();
+ * 
+ *     case SYS_writev:
+ *         return sys_writev();
+ * 
+ *     case SYS_read:
+ *         return sys_read();
+ * 
+ *     case SYS_close:
+ *         return sys_close();
+ * 
+ *     default:
+ *         // FIXME: don't panic.
+ * 
+ *         debug_reg();
+ *         panic("Unexpected syscall #%d\n", sysno);
+ *         
+ *         return 0;
+ *     }
+ * }
+ * ```
+ *
+ */
+

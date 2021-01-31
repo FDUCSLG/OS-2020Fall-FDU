@@ -6,14 +6,86 @@
 #include "arm.h"
 #include "uart.h"
 #include "spinlock.h"
+#include "file.h"
+
+#define CONSOLE 1
 
 static struct spinlock conslock;
 static int panicked = -1;
+
+#define INPUT_BUF 128
+struct {
+  char buf[INPUT_BUF];
+  size_t r;  // Read index
+  size_t w;  // Write index
+  size_t e;  // Edit index
+} input;
+#define C(x)  ((x)-'@')  // Control-x
+#define BACKSPACE 0x100
+
+static void
+consputc(int c)
+{
+    if(c == BACKSPACE) {
+        uart_putchar('\b'); uart_putchar(' '); uart_putchar('\b');
+    } else
+        uart_putchar(c);
+}
+
+static ssize_t
+console_write(struct inode *ip, char *buf, ssize_t n)
+{
+    iunlock(ip);
+    acquire(&conslock);
+    for (size_t i = 0; i < n; i++)
+        consputc(buf[i] & 0xff);
+    release(&conslock);
+    ilock(ip);
+    return n;
+}
+
+static ssize_t
+console_read(struct inode *ip, char *dst, ssize_t n)
+{
+    iunlock(ip);
+    size_t target = n;
+    acquire(&conslock);
+    while (n > 0) {
+        while (input.r == input.w) {
+            if (thisproc()->killed) {
+                release(&conslock);
+                ilock(ip);
+                return -1;
+            }
+            sleep(&input.r, &conslock);
+        }
+        int c = input.buf[input.r++ % INPUT_BUF];
+        if (c == C('D')) {  // EOF
+            if (n < target) {
+                // Save ^D for next time, to make sure
+                // caller gets a 0-byte result.
+                input.r--;
+            }
+            break;
+        }
+        *dst++ = c;
+        --n;
+        if (c == '\n')
+            break;
+    }
+    release(&conslock);
+    ilock(ip);
+
+    return target - n;
+}
 
 void
 console_init()
 {
     uart_init();
+
+    devsw[CONSOLE].read = console_read;
+    devsw[CONSOLE].write = console_write;
 }
 
 static void
@@ -109,9 +181,50 @@ cprintf(const char *fmt, ...)
 }
 
 void
-cgetchar(int c)
+console_intr(int (*getc)())
 {
-    cprintf("%c", c);
+    int c, doprocdump = 0;
+
+    acquire(&conslock);
+    if (panicked >= 0) {
+        release(&conslock);
+        while (1) ;
+    }
+
+    while ((c = getc()) >= 0) {
+        switch (c) {
+        case C('P'):  // Process listing.
+            // procdump() locks cons.lock indirectly; invoke later
+            doprocdump = 1;
+            break;
+        case C('U'):  // Kill line.
+            while (input.e != input.w && input.buf[(input.e-1) % INPUT_BUF] != '\n') {
+                input.e--;
+                consputc(BACKSPACE);
+            }
+        break;
+        case C('H'): case '\x7f':  // Backspace
+            if (input.e != input.w){
+                input.e--;
+                consputc(BACKSPACE);
+            }
+            break;
+        default:
+            if (c != 0 && input.e-input.r < INPUT_BUF) {
+                c = (c == '\r') ? '\n' : c;
+                input.buf[input.e++ % INPUT_BUF] = c;
+                consputc(c);
+                if (c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF) {
+                    input.w = input.e;
+                    wakeup(&input.r);
+                }
+            }
+            break;
+        }
+    }
+    release(&conslock);
+
+    if (doprocdump) procdump();
 }
 
 void

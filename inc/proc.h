@@ -1,12 +1,14 @@
 #ifndef INC_PROC_H
 #define INC_PROC_H
 
-#include <stdint.h>
+#include <stddef.h>
+
 #include "arm.h"
 #include "trap.h"
 
 #define NCPU   4        /* maximum number of CPUs */
 #define NPROC 64        /* maximum number of processes */
+#define NOFILE 16       /* open files per process */
 #define KSTACKSIZE 4096 /* size of per-process kernel stack */
 
 #define thiscpu (&cpus[cpuid()])
@@ -44,12 +46,24 @@ struct proc {
     void *chan;              /* If non-zero, sleeping on chan           */
     int killed;              /* If non-zero, have been killed           */
     char name[16];           /* Process name (debugging)                */
+
+    struct file *ofile[NOFILE];  /* Open files */
+    struct inode *cwd;           /* Current directory */
 };
+
+static inline struct proc *
+thisproc()
+{
+    return thiscpu->proc;
+}
 
 void proc_init();
 void user_init();
 void scheduler();
 
+void yield();
 void exit();
+int fork();
+int wait();
 
 #endif

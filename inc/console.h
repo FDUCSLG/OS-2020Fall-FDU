@@ -2,12 +2,13 @@
 #define INC_CONSOLE_H
 
 #include <stdarg.h>
-#include <stdint.h>
 
 void console_init();
+void console_intr(int (*getc)());
 void cgetchar(int c);
 void cprintf(const char *fmt, ...);
 void panic(const char *fmt, ...);
+
 
 #define assert(x)                                                   \
 ({                                                                  \
@@ -16,7 +17,6 @@ void panic(const char *fmt, ...);
     }                                                               \
 })
 
-/* Assertion with reason. */
 #define asserts(x, ...)                                             \
 ({                                                                  \
     if (!(x)) {                                                     \
