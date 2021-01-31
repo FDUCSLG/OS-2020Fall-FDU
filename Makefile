@@ -1,3 +1,4 @@
+ARCH := aarch64
 CROSS := aarch64-linux-gnu-
 CC := $(CROSS)gcc
 LD := $(CROSS)ld
