@@ -57,6 +57,20 @@ int fork1(void);                // Fork but panics on failure.
 void panic(char *);
 struct cmd *parsecmd(char *);
 
+void *
+malloc1(size_t sz)
+{
+#define MAXN  10000
+    static char mem[MAXN];
+    static size_t i;
+    if ((i += sz) > MAXN) {
+        fprintf(stderr, "malloc1: memory used out\n");
+        exit(1);
+    }
+    return &mem[i - sz];
+#undef MAXN
+}
+
 // Execute cmd.  Never returns.
 void
 runcmd(struct cmd *cmd)
@@ -199,7 +213,7 @@ execcmd(void)
 {
     struct execcmd *cmd;
 
-    cmd = malloc(sizeof(*cmd));
+    cmd = malloc1(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = EXEC;
     return (struct cmd *) cmd;
@@ -210,7 +224,7 @@ redircmd(struct cmd *subcmd, char *file, char *efile, int mode, int fd)
 {
     struct redircmd *cmd;
 
-    cmd = malloc(sizeof(*cmd));
+    cmd = malloc1(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = REDIR;
     cmd->cmd = subcmd;
@@ -226,7 +240,7 @@ pipecmd(struct cmd *left, struct cmd *right)
 {
     struct pipecmd *cmd;
 
-    cmd = malloc(sizeof(*cmd));
+    cmd = malloc1(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = PIPE;
     cmd->left = left;
@@ -239,7 +253,7 @@ listcmd(struct cmd *left, struct cmd *right)
 {
     struct listcmd *cmd;
 
-    cmd = malloc(sizeof(*cmd));
+    cmd = malloc1(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = LIST;
     cmd->left = left;
@@ -252,7 +266,7 @@ backcmd(struct cmd *subcmd)
 {
     struct backcmd *cmd;
 
-    cmd = malloc(sizeof(*cmd));
+    cmd = malloc1(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = BACK;
     cmd->cmd = subcmd;
